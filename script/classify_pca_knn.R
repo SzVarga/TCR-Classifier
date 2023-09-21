@@ -36,7 +36,18 @@ tp_rate <- c()
 tn_rate <- c()
 precision <- c()
 
+# scale reference measure_matrix
+measure_ref$measure_matrix <- measure_scale(measure_ref$measure_matrix)
 
+# Create pca mapper function
+mapper <- create_pca_mapper(measure_ref, pc_x = 1, pc_y = 13,
+                            pcx_features = 2, pcy_features = 2)
+
+# Transform reference data
+reference_data <- mapper$transform(measure_ref)
+
+# iterate over tcr objects (for statistical power)
+# and predict clone type from sample data
 for (iterator in iterators) {
   # retreive a single tcr object
   tcr <- tcr_collection[[iterator]]
@@ -54,19 +65,15 @@ for (iterator in iterators) {
   # calculate measures
   measure_pred <- get_measures(tcr, smpl_pred, draws = draw, progress = TRUE)
 
-  # scale measures prior to pca
-  measure_ref$measure_matrix <- measure_scale(measure_ref$measure_matrix)
+  # scale prediction measures prior to pca
   measure_pred$measure_matrix <- measure_scale(measure_pred$measure_matrix)
 
-  # get classification data set
-  max <- length(colnames(measure_ref$measure_matrix))
-  classif_data <- get_pca_features(measure_ref, measure_pred,
-                                   pc_x = 1, pc_y = 13,
-                                   pcx_features = 2, pcy_features = 2)
+  # map measures to pca space
+  prediction_data <- mapper$transform(measure_pred)
 
   # predict labels and generate confusion matrix
-  estimation <- knn_predict(reference_data = classif_data$ref_data,
-                            prediction_data = classif_data$pred_data,
+  estimation <- knn_predict(reference_data = reference_data,
+                            prediction_data = prediction_data,
                             k = 1)
   conf_matrix <- evaluate_prediction(tcr, estimation)
 

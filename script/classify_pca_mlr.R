@@ -37,7 +37,29 @@ tp_rate <- c()
 tn_rate <- c()
 precision <- c()
 
+# scale reference measure_matrix
+measure_ref$measure_matrix <- measure_scale(measure_ref$measure_matrix)
 
+# Create pca mapper function
+mapper <- create_pca_mapper(measure_ref, pc_x = 1, pc_y = 13,
+                            pcx_features = 2, pcy_features = 2)
+
+# Transform reference data
+reference_data <- mapper$transform(measure_ref)
+
+# create reference data frame structure
+ref_data <- as.data.frame(reference_data[-c(1, 2)])
+ref_data$label <- reference_data$label
+
+# relevel labels
+ref_data$label <- as.factor(ref_data$label)
+ref_data$label <- relevel(ref_data$label, ref = 1)
+
+# train model
+model <- nnet::multinom(label ~ ., data = ref_data, maxit = 1000)
+
+# iterate over tcr objects (for statistical power)
+# and predict clone type from sample data
 for (iterator in iterators) {
   # retreive a single tcr object
   tcr <- tcr_collection[[iterator]]
@@ -55,32 +77,16 @@ for (iterator in iterators) {
   # calculate measures
   measure_pred <- get_measures(tcr, smpl_pred, draws = draw, progress = TRUE)
 
-  # scale measures prior to pca
-  measure_ref$measure_matrix <- measure_scale(measure_ref$measure_matrix)
+  # scale prediction measures prior to pca
   measure_pred$measure_matrix <- measure_scale(measure_pred$measure_matrix)
 
-  # get classification data set
-  max <- length(colnames(measure_ref$measure_matrix))
-  classif_data <- get_pca_features(measure_ref, measure_pred,
-                                   pc_x = 1, pc_y = 2,
-                                   pcx_features = 2, pcy_features = 2)
+  # map measures to pca space
+  prediction_data <- mapper$transform(measure_pred)
 
-  # Multinomial logistic regression
-  # reshape reference data
-  ref_data <- data.frame(classif_data$ref_data[-c(1, 2)])
-  ref_data$label <- classif_data$ref_data$label
+  # create predicion data frame structure
+  pred_data <- data.frame(prediction_data[-c(1, 2)])
 
-  # relevel labels
-  ref_data$label <- as.factor(ref_data$label)
-  ref_data$label <- relevel(ref_data$label, ref = 1)
-
-  # reshape prediction data
-  pred_data <- data.frame(classif_data$pred_data[-1])
-
-  # train model
-  model <- nnet::multinom(label ~ ., data = ref_data, maxit = 1000)
-
-  # predict labels
+  # predict clone type based on multinomial regression model
   prediction <- t(predict(model, newdata = pred_data, type = "prob"))
 
   # use most likely prediction label
