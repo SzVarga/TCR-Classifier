@@ -37,7 +37,23 @@ tp_rate <- c()
 tn_rate <- c()
 precision <- c()
 
+# Train the multinomial regression model
+# scale reference measure_matrix
+measure_ref$measure_matrix <- measure_scale(measure_ref$measure_matrix)
 
+# create reference data frame structure
+ref_data <- as.data.frame(measure_ref$measure_matrix)
+ref_data$label <- measure_ref$label_vec
+
+# relevel labels
+ref_data$label <- as.factor(ref_data$label)
+ref_data$label <- relevel(ref_data$label, ref = 1)
+
+# train model
+model <- nnet::multinom(label ~ ., data = ref_data, maxit = 1000)
+
+# iterate over tcr objects (for statistical power)
+# and predict clone type from sample data
 for (iterator in iterators) {
   # retreive a single tcr object
   tcr <- tcr_collection[[iterator]]
@@ -55,23 +71,13 @@ for (iterator in iterators) {
   # calculate measures
   measure_pred <- get_measures(tcr, smpl_pred, draws = draw, progress = TRUE)
 
-  # scale measure matrices
-  measure_ref$measure_matrix <- measure_scale(measure_ref$measure_matrix)
+  # scale prediction measure_matrix
   measure_pred$measure_matrix <- measure_scale(measure_pred$measure_matrix)
-
-  # create reference data frame structure
-  ref_data <- as.data.frame(measure_ref$measure_matrix)
-  ref_data$label <- measure_ref$label_vec
-
-  # relevel labels
-  ref_data$label <- as.factor(ref_data$label)
-  ref_data$label <- relevel(ref_data$label, ref = 1)
 
   # create predicion data frame structure
   pred_data <- as.data.frame(measure_pred$measure_matrix)
 
-  # train model
-  model <- nnet::multinom(label ~ ., data = ref_data, maxit = 1000)
+  # predict clone type based on multinomial regression model
   prediction <- t(predict(model, newdata = pred_data, type = "prob"))
 
   # use most likely prediction label
@@ -105,6 +111,7 @@ for (iterator in iterators) {
   cat("simulation time:", sim_time, "s", "\n")
 }
 
+# collect classifier performance data
 data <- data.frame(tcr = rep,
                    sample_size = sample_size,
                    clone_label = clo_type,
