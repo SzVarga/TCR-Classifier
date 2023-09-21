@@ -30,7 +30,7 @@ smpl <- list(P1 = sample_at(tcr, sample_size, "P1", detect_lim = 3),
 smpl_ref <- do.call(sample_bind, smpl)
 
 # calculate measures
-ref_measure <- get_measures(tcr, smpl_ref, draws = 1000, progress = TRUE)
+ref_measure <- get_measures(tcr, smpl_ref, draws = 10000, progress = TRUE)
 
 # save output
 dir_out <- "data/ref_measures"
