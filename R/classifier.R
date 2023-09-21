@@ -40,27 +40,10 @@ get_pca <- function(measures, center = FALSE, scale = FALSE) {
   return(pc)
 }
 
-
-plt_pca_loadings <- function(measures, scale = FALSE) {
-  # scale measures
-  if (scale) {
-    measures <- measure_scale(measures)
-  }
-
-  # perform pca
-  pc <- get_pca(measures)
-
-  # create heatmap of loadings
-  plt <- heatmap(abs(pc$rotation), Rowv = NA, Colv = NA)
-
-  return(plt)
-}
-
-
-# classifier
-get_pca_features <- function(measures_ref, measures_pred,
-                             pc_x = 1, pc_y = 2,
-                             pcx_features = 2, pcy_features = 2) {
+# Closure that returns a function for mapping data based on PCA features
+create_pca_mapper <- function(measures_ref,
+                              pc_x, pc_y,
+                              pcx_features, pcy_features) {
 
   # perform pca
   pc <- get_pca(measures_ref$measure_matrix)
@@ -69,41 +52,14 @@ get_pca_features <- function(measures_ref, measures_pred,
   pc_x <- paste0("PC", pc_x)
   pc_y <- paste0("PC", pc_y)
 
-  # get loadings for principal components
+  # get the first n (biggest) loadings
+  idx_x <- order(abs(pc$rotation[, pc_x]), decreasing = TRUE)[1:pcx_features]
+  idx_y <- order(abs(pc$rotation[, pc_y]), decreasing = TRUE)[1:pcy_features]
+
+  # extract loadings
   loadings <- list()
-  loadings$x <- pc$rotation[order(abs(pc$rotation[, pc_x]), decreasing = TRUE)[1:pcx_features], pc_x] 
-  loadings$y <- pc$rotation[order(abs(pc$rotation[, pc_y]), decreasing = TRUE)[1:pcy_features], pc_y]
-
-
-  # create reference data set
-  ref_data <- list(id = rownames(measures_ref$measure_matrix),
-                  label = measures_ref$label_vec,
-                  x = numeric(nrow(measures_ref$measure_matrix)),
-                  y = numeric(nrow(measures_ref$measure_matrix)))
-  measures_ref <- as.data.frame(measures_ref$measure_matrix)
-  for (i in seq_along(loadings$x)) {
-    ref_data$x <- ref_data$x +
-                  loadings$x[[i]] * measures_ref[, names(loadings$x)[i]]
-  }
-  for (i in seq_along(loadings$y)) {
-    ref_data$y <- ref_data$y +
-                  loadings$y[[i]] * measures_ref[, names(loadings$y)[i]]
-  }
-
-  # create prediction data set
-  pred_data <- list(id = rownames(measures_pred$measure_matrix),
-                   label = measures_pred$label_vec,
-                   x = numeric(nrow(measures_pred$measure_matrix)),
-                   y = numeric(nrow(measures_pred$measure_matrix)))
-  measures_pred <- as.data.frame(measures_pred$measure_matrix)
-  for (i in seq_along(loadings$x)) {
-    pred_data$x <- pred_data$x +
-                   loadings$x[[i]] * measures_pred[, names(loadings$x)[i]]
-  }
-  for (i in seq_along(loadings$y)) {
-    pred_data$y <- pred_data$y +
-                   loadings$y[[i]] * measures_pred[, names(loadings$y)[i]]
-  }
+  loadings$x <- pc$rotation[idx_x, pc_x]
+  loadings$y <- pc$rotation[idx_y, pc_y]
 
   # create transformation labels
   x_lab_comp <- character(length(loadings$x))
@@ -120,16 +76,38 @@ get_pca_features <- function(measures_ref, measures_pred,
   x_lab <- paste(x_lab_comp, collapse = " + ")
   y_lab <- paste(y_lab_comp, collapse = " + ")
 
-  result <- list(ref_data = ref_data,
-                 pred_data = pred_data,
-                 pc_ref = pc,
+  # Define the mapping function
+  pca_mapping_function <- function(measures) {
+    # create data structure
+    data <- list(id = rownames(measures$measure_matrix),
+                 label = measures$label_vec,
+                 x = numeric(nrow(measures$measure_matrix)),
+                 y = numeric(nrow(measures$measure_matrix)))
+    #convert measures to data frame
+    measures <- as.data.frame(measures$measure_matrix)
+    # map data
+    for (i in seq_along(loadings$x)) {
+      data$x <- data$x +
+                loadings$x[[i]] * measures[, names(loadings$x)[i]]
+    }
+    for (i in seq_along(loadings$y)) {
+      data$y <- data$y +
+                loadings$y[[i]] * measures[, names(loadings$y)[i]]
+    }
+    return(data)
+  }
+
+  # return result object
+  result <- list(transform = pca_mapping_function,
+                 pc = pc,
                  x_label = x_lab,
                  y_label = y_lab)
   return(result)
 }
 
 # plot classification data reference data vs sample
-plt_pca_features <- function(data, legend = "bottomright", ...) {
+plt_pca_features <- function(ref_data, pred_data = NULL,
+                             legend = "bottomright", ...) {
   # picking color based on true clone label
   map_to_colors <- function(vector) {
     result <- sapply(vector, function(i) {
@@ -144,18 +122,36 @@ plt_pca_features <- function(data, legend = "bottomright", ...) {
   }
 
   # plotting
-  plot(data$ref_data$x, data$ref_data$y, type = "p",
-       main = "Scatterplot", col = map_to_colors(data$ref_data$label),
-       xlab = data$x_label, ylab = data$y_label, ...)
-  points(data$pred_data$x, data$pred_data$y, type = "p", pch = 4,
-         col = map_to_colors(data$pred_data$label)
-         )
+  plot(ref_data$x, ref_data$y, type = "p",
+       main = "Scatterplot", col = map_to_colors(ref_data$label),
+       xlim = c(min(ref_data$x, pred_data$x), max(ref_data$x, pred_data$x)),
+       ylim = c(min(ref_data$y, pred_data$y), max(ref_data$y, pred_data$y)),
+       ...)
+  if (!is.null(pred_data)) {
+    points(pred_data$x, pred_data$y, type = "p", pch = 4,
+           col = map_to_colors(pred_data$label))
+  }
   if (legend != "none") {
     legend(legend, legend = c("Reference", "Sample",
                               "Persistent", "Contracting", "Late Emerging"),
            col = c("black", "black", "#8DC955", "#DE5A43", "#33528F"),
            pch = c(1, 4, 20, 20, 20))
   }
+}
+
+plt_pca_loadings <- function(measures, scale = FALSE) {
+  # scale measures
+  if (scale) {
+    measures <- measure_scale(measures)
+  }
+
+  # perform pca
+  pc <- get_pca(measures)
+
+  # create heatmap of loadings
+  plt <- heatmap(abs(pc$rotation), Rowv = NA, Colv = NA)
+
+  return(plt)
 }
 
 # find the closest reference data point and return its label
