@@ -285,7 +285,7 @@ sample_at <- function(repertoire, size = 15, time_point, detect_lim = 3) {
   ids <- names(data)[2:(length(data) - 1)]
 
   # sampled tcr
-  smpld <- c()
+  smpld <- numeric(size)
   # sampling sequentially
   for (i in 1:size){
     # calculate weights
@@ -293,7 +293,7 @@ sample_at <- function(repertoire, size = 15, time_point, detect_lim = 3) {
     # sample clone id
     smpl <- sample(ids, size = 1, replace = FALSE, prob = weights)
     # append sampled clone to sampled vector
-    smpld <- c(smpld, smpl)
+    smpld[i] <- smpl
     # decrement sampled clone
     data[[smpl]] <- data[[smpl]] - 1
   }
