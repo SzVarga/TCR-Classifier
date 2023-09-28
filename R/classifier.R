@@ -155,27 +155,26 @@ plt_pca_loadings <- function(measures, scale = FALSE) {
 }
 
 # find the closest reference data point and return its label
-knn_predict <- function(reference_data, prediction_data, k = 1) {
-  # find closest labels for each observation
-  closest_labels <- sapply(seq_along(prediction_data$x), function(i) {
-    distances <- sqrt((reference_data$x - prediction_data$x[i])^2 +
-                      (reference_data$y - prediction_data$y[i])^2)
-    distances <- order(distances, decreasing = FALSE)
+knn_predict <- function(tcr, reference_data, prediction_data, k = 1, ...) {
+  # get indices for closest clones
+  knn_index <- FNN::get.knnx(reference_data,
+                             prediction_data,
+                             k = 1, ...)$nn.index
 
-    # Get the labels of the k-nearest neighbors
-    k_nearest_labels <- reference_data$label[distances[1:k]]
+  # name knn_index rows and columns
+  rownames(knn_index) <- rownames(prediction_data)
+  colnames(knn_index) <- seq(1, ncol(knn_index))
 
-    # Perform majority vote with first occurrence tie-breaking
-    majority_label <- k_nearest_labels[max(table(k_nearest_labels))]
-
-    # Return the predicted label
-    return(majority_label)
+  # predict labels based on knn statistics
+  estimation <- apply(knn_index, 1, function(x) {
+    ids <- rownames(reference_data)[x]
+    ids <- as.numeric(ids)
+    labels <- sapply(ids, function(id) return(tcr$clonotypes[[id]]$label))
+    label <- which.max(table(labels))
+    return(label)
   })
 
-  # Add clone ids
-  names(closest_labels) <- prediction_data$id
-
-  return(closest_labels)
+  return(estimation)
 }
 
 # Evaluate classification

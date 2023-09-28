@@ -6,6 +6,7 @@ set.seed(20220314)
 
 # load libraries and functions
 require(caret)          # confusion matrix evaluation
+require(FNN)            # get k-nearest neighbors
 source("R/tcr_model.R")
 source("R/measures.R")
 source("R/classifier.R")
@@ -39,17 +40,6 @@ precision <- c()
 # scale reference measure_matrix
 measure_ref$measure_matrix <- measure_scale(measure_ref$measure_matrix)
 
-# Create pca mapper function
-mapper <- create_pca_mapper(measure_ref, pc_x = 1, pc_y = 13,
-                            pcx_features = 2, pcy_features = 2)
-
-# Transform reference data
-reference_data <- mapper$transform(measure_ref)
-
-# reshape reference data for knn_predict
-reference_data_knn <- cbind(reference_data$x, reference_data$y)
-rownames(reference_data_knn) <- reference_data$id
-
 # iterate over tcr objects (for statistical power)
 # and predict clone type from sample data
 for (iterator in iterators) {
@@ -72,17 +62,10 @@ for (iterator in iterators) {
   # scale prediction measures prior to pca
   measure_pred$measure_matrix <- measure_scale(measure_pred$measure_matrix)
 
-  # map measures to pca space
-  prediction_data <- mapper$transform(measure_pred)
-
-  # reshape prediction data for knn_predict
-  prediction_data_knn <- cbind(prediction_data$x, prediction_data$y)
-  rownames(prediction_data_knn) <- prediction_data$id
-
   # predict labels
   estimation <- knn_predict(tcr,
-                            reference_data_knn,
-                            prediction_data_knn,
+                            measure_ref$measure_matrix,
+                            measure_pred$measure_matrix,
                             k = 1, algorithm = "kd_tree")
 
   # generate confusion matrix
