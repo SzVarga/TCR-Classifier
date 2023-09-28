@@ -22,7 +22,7 @@ args <- commandArgs(trailingOnly = TRUE)
 
 # settings
 iterators <- 1:10
-draw <- 10
+draw <- 1000
 smpl_size <- as.numeric(args[1])
 
 # data container
@@ -36,7 +36,7 @@ accuracy <- c()
 tp_rate <- c()
 tn_rate <- c()
 precision <- c()
-jackknife_only <- TRUE
+jackknife_only <- FALSE
 
 # keep only measures calculated using d1-jackknife
 if (jackknife_only) {
