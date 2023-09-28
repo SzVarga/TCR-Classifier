@@ -35,6 +35,13 @@ accuracy <- c()
 tp_rate <- c()
 tn_rate <- c()
 precision <- c()
+jackknife_only <- TRUE
+
+# keep only measures calculated using d1-jackknife
+if (jackknife_only) {
+  idx_jackknife <- grep("_d", colnames(measure_ref$measure_matrix))
+  measure_ref$measure_matrix <- measure_ref$measure_matrix[, idx_jackknife]
+}
 
 # scale reference measure_matrix
 measure_ref$measure_matrix <- measure_scale(measure_ref$measure_matrix)
@@ -68,6 +75,12 @@ for (iterator in iterators) {
 
   # calculate measures
   measure_pred <- get_measures(tcr, smpl_pred, draws = draw, progress = TRUE)
+
+  # keep only measures calculated using d1-jackknife
+  if (jackknife_only) {
+    idx_jackknife <- grep("_d", colnames(measure_pred$measure_matrix))
+    measure_pred$measure_matrix <- measure_pred$measure_matrix[, idx_jackknife]
+  }
 
   # scale prediction measures prior to pca
   measure_pred$measure_matrix <- measure_scale(measure_pred$measure_matrix)
