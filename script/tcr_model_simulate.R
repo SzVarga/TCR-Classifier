@@ -36,7 +36,7 @@ for (generation in 1:num_generations) {
 
     # add clones to TCR-repertoire
     for (i in 1:num_clones) {
-        tcr <- add_clone(tcr = tcr, label = "persisting",
+        tcr <- add_clone(tcr = tcr, label = "persistent",
                          init_size = clone_size,
                          birth = birth_pers,
                          death = death_pers)

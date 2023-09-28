@@ -19,21 +19,21 @@ get_label <- function(x) {
   # convert label to index
   if (x == 1 || x == 2 || x == 3) {
     # nothing to do
-  } else if (x == "persisting") {
+  } else if (x == "persistent") {
     x <- 1
   } else if (x == "contracting") {
     x <- 2
   }else if (x == "late_emerging") {
     x <- 3
   } else {
-    stop("x must be one of the following \n 1 or \"persisting\", 
+    stop("x must be one of the following \n 1 or \"persistent\", 
     \n 2 or \"contracting\", \n 3 or \"late_emerging\"")
   }
 
   # check if global label (factor) exists
   if (is.null(.GlobalEnv$Label)) {
-    .GlobalEnv$Label <- factor(c("persisting", "contracting", "late_emerging"),
-    levels = c("persisting", "contracting", "late_emerging"))
+    .GlobalEnv$Label <- factor(c("persistent", "contracting", "late_emerging"),
+    levels = c("persistent", "contracting", "late_emerging"))
   }
 
   return(.GlobalEnv$Label[x])
@@ -71,6 +71,7 @@ new_tcr <- function(sim_times, carry_cap) {
     clonotypes = list(),
     sim_times = sim_times,
     carry_cap = carry_cap,
+    clone_labels = c(),
     data = matrix()
   )
   return(tcr)
@@ -92,6 +93,8 @@ add_clone <- function(tcr, label, init_size, birth, death) {
 
   # append clonotype to tcr
   tcr$clonotypes <- c(tcr$clonotypes, list(clonotype))
+  # append label to tcr
+  tcr$clone_labels <- unique(c(tcr$clone_labels, label))
 
   return(tcr)
 }
@@ -467,7 +470,7 @@ tcr_box_evo <- function(repertoire, init_smpl, box = TRUE,
   col_labels <- c()
   for (id in init_ids) {
     label <- repertoire$clonotypes[[id]]$label
-    if (label == "persisting") {
+    if (label == "persistent") {
       col_labels <- c(col_labels, "#8DC955")
     } else if (label == "contracting") {
       col_labels <- c(col_labels, "#DE5A43")
@@ -506,7 +509,7 @@ tcr_box_evo <- function(repertoire, init_smpl, box = TRUE,
   }
 
   # Create a legend
-  legend("topleft", legend = c("Persisting", "Contracting", "Late Emerging"),
+  legend("topleft", legend = c("Persistent", "Contracting", "Late Emerging"),
          fill = c("#8DC955", "#DE5A43", "#33528F"), title = "Clone Label")
 
   return(plt)
