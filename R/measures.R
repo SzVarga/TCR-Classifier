@@ -156,7 +156,42 @@ measure_scale <- function(measure, ...) {
     # shift and scale using user provided arguments
     args$scale <- ifelse(args$scale == 0, 1, args$scale) # avoid division by 0
     measure <- scale(measure, center = args$shift, scale = args$scale)
+
+  } else if ("method" %in% names(args)) {
+    # shift and scale based on method provided
+    if (args$method == "minmax") {
+      # scale to [0, 1]
+      measure <- apply(measure, 2, function(x) {
+        (x - min(x)) / (max(x) - min(x))
+      })
+
+    } else if (args$method == "robust") {
+      # shift by median and scale by IQR
+      median_measure <- apply(measure, 2, median)
+      iqr_measure <- apply(measure, 2, IQR)
+
+      # Avoid division by 0
+      iqr_measure <- ifelse(iqr_measure == 0, 1, iqr_measure)
+
+      measure <- scale(measure, center = median_measure, scale = iqr_measure)
+
+    } else if (args$method == "z-score") {
+      # shift and scale based on data provided
+      sd_measure <- apply(measure, 2, sd)
+
+      # Avoid division by 0
+      sd_measure <- ifelse(sd_measure == 0, 1, sd_measure)
+
+      # scale measures
+      measure <- scale(measure, center = TRUE, scale = sd_measure)
+
+    } else {
+      # unknown method
+      stop("Unknown method '", args$method, "'")
+    }
+
   } else {
+    # apply z-score normalization
     # shift and scale based on data provided
     sd_measure <- apply(measure, 2, sd)
 
