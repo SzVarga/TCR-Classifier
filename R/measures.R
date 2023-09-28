@@ -1,4 +1,14 @@
-# Simpson index
+#' Calculate the Simpson's Diversity Index for a sample.
+#'
+#' This function quantifies the probability that two individuals
+#' randomly selected from a sample will belong to different species.
+#' It ranges from 0 (no diversity) to 1 (maximum diversity).
+#'
+#' @param smpl A numeric vector representing the abundance of each species
+#' in the sample.
+#' @return The Simpson's Diversity Index for the sample, ranging from 0 to 1.
+#'
+#' @export
 si <- function(smpl) {
   # avoid division by 0
   total_sum <- sum(smpl)
@@ -13,7 +23,16 @@ si <- function(smpl) {
   return(index)
 }
 
-# Morisita-Horn overlap
+#' Calculate the Morisita-Horn dissimilarity matrix for a sample.
+#'
+#' This function calculates the Morisita-Horn dissimilarity matrix for a sample
+#' using the package \code{vegan}.
+#'
+#' @param smpl_matrix A numeric matrix where each row represents a time point,
+#'        and each column represents the abundance of a particular clone.
+#' @return A dissimilarity matrix calculated using the Morisita-Horn method.
+#'
+#' @export
 mh <- function(smpl_matrix) {
   result <- vegan::vegdist(smpl_matrix, method = "horn")
   result <- as.matrix(result)
@@ -21,7 +40,16 @@ mh <- function(smpl_matrix) {
   return(result)
 }
 
-# Chao overlap
+#' Calculate the Chao-Jaccard dissimilarity matrix for a sample matrix.
+#'
+#' This function calculates the Chao-Jaccard dissimilarity matrix for a sample
+#' using the package \code{vegan}.
+#'
+#' @param smpl_matrix A numeric matrix where each row represents a time point,
+#'        and each column represents the abundance of a particular clone.
+#' @return A dissimilarity matrix calculated using the Chao-Jaccard method.
+#'
+#' @export
 ch <- function(smpl_matrix)  {
   result <- vegan::vegdist(smpl_matrix, method = "chao")
   result <- as.matrix(result)
@@ -29,7 +57,29 @@ ch <- function(smpl_matrix)  {
   return(result)
 }
 
-# calculate measurements
+#' Calculate diversity and overlap measures for a samples.
+#'
+#' This function calculates diversity and overlap measures,
+#' including Simpson's Index, Morisita-Horn Index, and Chao-Jaccard Index,
+#' for clones sampled at different time points. It estimates these measures
+#' for each clone in the repertoire based on downsampling of the sample table,
+#' to avoid sampling bias.
+#'
+#' @param tcr A TCR repertoire object.
+#' @param smpl_table A sample table representing the abundance of each clone
+#' in the samples. Rows correspond to different time points, and columns
+#' correspond to clone IDs.
+#' @param draws The number of random draws to generate the resampled
+#' abundance data.
+#' @param progress A logical value indicating whether to display a progress bar.
+#'
+#' @return A list containing diversity and overlap measures for each clone.
+#'        The list includes the following components:
+#'        - label_vec: A vector of clone labels corresponding to each clone.
+#'        - measure_matrix: A matrix containing the calculated diversity and
+#'        overlap measures for each clone.
+#'
+#' @export
 get_measures <- function(tcr, smpl_table, draws = 10000, progress = FALSE) {
   # determine size nR (nR < nE) to which TCR set needs to be reduced
   smpl_min <- sample_min_size(smpl_table)
@@ -147,7 +197,29 @@ get_measures <- function(tcr, smpl_table, draws = 10000, progress = FALSE) {
   return(measure_obj)
 }
 
-# scale measureMatrix
+#' Scale and shift the measures matrix.
+#'
+#' This function scales and shifts the measures matrix using various methods.
+#' You can specify the method for scaling and shifting, or provide custom
+#' values. The available methods are "minmax" (scale to [0, 1]),
+#' "robust" (shift by median and scale by IQR), and "z-score"
+#' (center at 0 and scale by standard deviation). If no method or
+#' custom values are provided, the function applies z-score normalization
+#' by default. If a column has 0 standard deviation or IQR, the function will
+#' not scale the corresponding column.
+#'
+#' @param measure A matrix of measures where rows represent observations and
+#'        columns represent measures (e.g., Morisita-Horn).
+#' @param ... Additional arguments that can be provided to customize the scaling
+#'        and shifting. You can use the following arguments:
+#'        - method: A character string specifying the scaling and shifting
+#'        method ("minmax", "robust", or "z-score"). Default is "z-score".
+#'        - shift: Vector specifying the shift to be applied to each column.
+#'        - scale: Vector specifying the scaling factor to be applied.
+#'
+#' @return A matrix of scaled and shifted measures.
+#'
+#' @export
 measure_scale <- function(measure, ...) {
   # store additional arguments
   args <- list(...)
