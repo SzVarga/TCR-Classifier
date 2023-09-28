@@ -26,7 +26,7 @@ smpl_size <- as.numeric(args[1])
 
 # data container
 classif_name <- "pca_knn"
-clo_labels <- c("persistent", "contracting", "late emerging")
+clo_labels <- tcr_collection[[1]]$clone_labels
 rep <- c()
 sample_size <- c()
 clo_type <- c()

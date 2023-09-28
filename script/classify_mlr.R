@@ -27,7 +27,7 @@ smpl_size <- as.numeric(args[1])
 
 # data container
 classif_name <- "mlr"
-clo_labels <- c("persistent", "contracting", "late emerging")
+clo_labels <- tcr_collection[[1]]$clone_labels
 rep <- c()
 sample_size <- c()
 clo_type <- c()
@@ -81,7 +81,17 @@ for (iterator in iterators) {
   prediction <- t(predict(model, newdata = pred_data, type = "prob"))
 
   # use most likely prediction label
-  estimation <- apply(prediction, 2, which.max)
+  binary_model <- c("persistent", "contracting")
+  full_model <- c("persistent", "contracting", "late_emerging")
+  if (identical(tcr$clone_labels, binary_model)) {
+    # binary model - estimation values are on [0,1]
+    estimation <- apply(prediction, 2, function(p) round(p) + 1)
+  } else if (identical(tcr$clone_labels, full_model)) {
+    # full model - estimation values are prob vectors of length 3
+    estimation <- apply(prediction, 2, which.max)
+  } else {
+    stop("unexpected clone labels")
+  }
   conf_matrix <- evaluate_prediction(tcr, estimation)
 
   # expand conf matrix to be 3x3

@@ -23,7 +23,7 @@ smpl_size <- as.numeric(args[1])
 
 # data container
 classif_name <- "naive"
-clo_labels <- c("persistent", "contracting", "late_emerging")
+clo_labels <- tcr_collection[[1]]$clone_labels
 rep <- c()
 sample_size <- c()
 clo_type <- c()
@@ -46,7 +46,17 @@ for (iterator in iterators) {
     S2 = sample_at(tcr, smpl_size, "S2", detect_lim = 3))
 
   # predict labels and generate confusion matrix
-  estimation <- naive_classifier(smpl$S1, smpl$S2, binary = FALSE)
+  binary_model <- c("persistent", "contracting")
+  full_model <- c("persistent", "contracting", "late_emerging")
+  if (identical(tcr$clone_labels, binary_model)) {
+    # binary model
+    estimation <- naive_classifier(smpl$S1, smpl$S2, binary = TRUE)
+  } else if (identical(tcr$clone_labels, full_model)) {
+    # full model
+    estimation <- naive_classifier(smpl$S1, smpl$S2, binary = FALSE)
+  } else {
+    stop("unexpected clone labels")
+  }
   conf_matrix <- evaluate_prediction(tcr, estimation)
 
   # expand conf matrix to be 3x3
