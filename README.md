@@ -7,6 +7,7 @@ The following R packages are utilisied in this project:
 - adaptivetau (adaptivetau function for stochastic model computation)
 - vegan (vegdist function for computation of dissimilarity indices)
 - nnet (multinom function for multinomial logistic regression model)
+- FNN (fast k-nearest neighbour statistic)
 - caret (evaluation of classification models)
 - utils (progress bar)
 - tidyr (data manipulation)
@@ -17,7 +18,7 @@ The following R packages are utilisied in this project:
 To install the required dependencies, run the following command in R:
 ```R
 # install package
-install.packages(c("adaptivetau", "vegan", "nnet", "caret", "utils", "tidyr", "dplyr", "ggplot2", "ggsignif"))
+install.packages(c("adaptivetau", "vegan", "nnet", "FNN", "caret", "utils", "tidyr", "dplyr", "ggplot2", "ggsignif"))
 ```
 ## Usage
 This collection of functions and scripts can be run from the command line without installation.
@@ -47,6 +48,7 @@ Each TCR object contains the following data:
 - `clonotype`: list of `clone` objects of the TCR repertoire
 - `sim_times`: named vector of time points at which the TCR repertoire must be calculated (sampling times)
 - `carry_cap`: carrying capacity of the TCR repertoire
+- `clone_labels` : character vector of unique clone labels contained in the TCR repertoire
 - `data`: matrix containing the simulated number of cells within each clone (columns) at each time point (rows). Also the `total` number of cells is calculated (last column).
 
 Adittionally, each `clone` object has the following data:
@@ -73,7 +75,10 @@ Currently there are four classification methods implemented:
 - `naive`: naive classification based on the clone's incidence (last two time points)
 - `mlr`: multinomial logistic regression model based on the entire measurement calculated from the sampled cells
 - `pca_mlr`: multinomial logistic regression model based on a subset of the calculated measurements (pca)
-- `pca_knn`: k-nearest neighbour classification based on a subset of the calculated measurements (pca)
+- `knn`: k-nearest neighbour classification based on the entire measurement calculated from the sampled cells
+- `pca_knn`: k-nearest neighbour classification based on a subset of the calculated measurements (pca)or 
+
+By setting the `jackknife_only` parameter to `TRUE`, the measurements utilsed for classification can be reduced to the jackknife measurements only.
 
 ## Dimensionality reduction and feature extraction (pca)
 Scripts using the `pca` method for dimensionality reduction and feature extraction are prefixed with `pca_`. \
