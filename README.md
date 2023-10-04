@@ -26,12 +26,12 @@ This collection of functions and scripts can be run from the command line withou
 On a slurm cluster the scripts can be called using the `cluster/submit.sh` script: \
 Make sure to edit the script according to your needs prior submition.
 ```bash
-sbatch submit.sh <script_arguments>
+sbatch cluster/submit.sh <script_arguments>
 ```
 For iterative job submition, the `cluster/iterations.job` script can be used: \
 The script iterates through a loop and calls submit.sh passing to it the iteration index as argument.
 ```bash
-./iterations.job
+./cluster/iterations.job
 ```
 
 ## Model simulation
