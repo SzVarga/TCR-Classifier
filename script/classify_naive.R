@@ -45,15 +45,18 @@ for (iterator in iterators) {
     S1 = sample_at(tcr, smpl_size, "S1", detect_lim = 3),
     S2 = sample_at(tcr, smpl_size, "S2", detect_lim = 3))
 
+  # combine samples
+  smpl_pred <- do.call(sample_bind, smpl)
+
   # predict labels and generate confusion matrix
   binary_model <- c("persistent", "contracting")
   full_model <- c("persistent", "contracting", "late_emerging")
   if (identical(tcr$clone_labels, binary_model)) {
     # binary model
-    estimation <- naive_classifier(smpl$S1, smpl$S2, binary = TRUE)
+    estimation <- naive_classifier(smpl_pred, binary = TRUE)
   } else if (identical(tcr$clone_labels, full_model)) {
     # full model
-    estimation <- naive_classifier(smpl$S1, smpl$S2, binary = FALSE)
+    estimation <- naive_classifier(smpl_pred, binary = FALSE)
   } else {
     stop("unexpected clone labels")
   }

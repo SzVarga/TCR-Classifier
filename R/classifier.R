@@ -1,58 +1,60 @@
 #' Naive Classifier
 #'
 #' This function performs a naive classification of T cell clones
-#' based on their presence at two time points. It can classify clones
+#' based on their incidence at three time points. It can classify clones
 #' into three categories: persisting, contracting, or late emerging.
 #' Alternatively, you can use a binary classification that only distinguishes
 #' between persisting and contracting clones.
 #'
-#' @param before Numeric vector representing the clone sizes at first time
-#'               point. The names of the vector should correspond to clone IDs.
-#' @param after Numeric vector representing the clone sizes at second time
-#'              point. The names of the vector should correspond to clone IDs.
+#' @param sample A matrix where each column represents a clone and each row
+#'               represents a sampling time point.
 #' @param binary Logical value indicating whether to use binary classification.
 #'        If TRUE, clones are classified as either persisting (1) or
 #'        contracting (2).
 #'        If FALSE, three categories are used: persisting (1), contracting (2),
 #'        and late emerging (3).
+#' @details
+#' If a clone is present at two or more time points and also at time point "S2",
+#' it is classified as persisting (1).
+#' If a clone is present at two or more time points but not at time point "S2",
+#' it is classified as contracting (2).
+#' If a clone is present at only one time point and not at time point "S2",
+#' it is also classified as contracting (2).
+#' If a clone is only present at time point "S2", it can be classified as
+#' either late emerging (3) or persistent (1) based on the binary setting.
 #'
 #' @return Named numeric vector of classification results. Clone IDs are
 #'         represented by names, the classification results are represented
 #'         by the values.
 #'
 #' @export
-naive_classifier <- function(before, after, binary = FALSE) {
+#'
+naive_classifier <- function(sample, binary = FALSE) {
 
-  all_ids <- union(names(before), names(after))
-  result <- numeric(length(all_ids))
-
-  # predict labels
-  for (i in seq_along(all_ids)) {
-    id <- all_ids[i]
-
-    # has clone been sampled in before and after
-    in_before <- id %in% names(before)
-    in_after <- id %in% names(after)
-
-    if (in_before && in_after) {
+  # evaluate each clone (column) in the sample
+  prediction <- apply(sample, 2, function(clone) {
+    # classify based on incidence at all three time points
+    occurence <- sum(clone > 0)
+    if (occurence >= 2 && (clone > 0)["S2"]) {
       # classify as persisting
-      result[i] <- 1
-    } else if (in_before) {
+      return(1)
+    } else  if (occurence >= 2 && !(clone > 0)["S2"]) {
       # classify as contracting
-      result[i] <- 2
-    } else if (in_after) {
-      if (!binary) {
-        # classify as late emerging
-        result[i] <- 3
+      return(2)
+    } else if (occurence == 1 && !(clone > 0)["S2"]) {
+      # classify as contracting
+      return(2)
+    } else {
+      # classify as late emerging or persistent based on binary setting
+      if (binary) {
+        return(1)
       } else {
-        # classify as persisting
-        result[i] <- 1
+        return(3)
       }
     }
-  }
+  })
 
-  names(result) <- all_ids
-  return(result)
+  return(prediction)
 }
 
 
