@@ -26,7 +26,7 @@ draw <- 1000
 smpl_size <- as.numeric(args[1])
 
 # data container
-classif_name <- "pca_knn"
+classif_name <- "knn"
 clo_labels <- tcr_collection[[1]]$clone_labels
 rep <- c()
 sample_size <- c()
@@ -122,4 +122,4 @@ data <- data.frame(tcr = rep,
 
 
 # save classifier performance data
-saveRDS(data, paste0("data/pca_knn/perf_pca_knn_", smpl_size, ".rds"))
+saveRDS(data, paste0("data/knn/perf_knn_", smpl_size, ".rds"))
