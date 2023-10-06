@@ -3,5 +3,5 @@
 # main loop
 for ((i = 1; i < 100; i += 1)); do
   # submit script with CLI argument
-  sbatch submit.sh "$i"
+  sbatch cluster/submit.sh "$i"
 done
