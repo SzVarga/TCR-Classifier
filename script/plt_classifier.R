@@ -1,20 +1,27 @@
 # clean env
 rm(list = ls())
 
+# load libraries
+require(dplyr)
+require(ggplot2)
+require(ggsignif)
+
 # set path to data
-path_naive <- "data/path_to_performance_data"
-path_pca_knn <- "data/path_to_performance_data"
-path_pca_mlr <- "data/path_to_performance_data"
-path_mlr <- "data/path_to_performance_data"
+path_naive <- "data/classifier/full/naive"
+path_pca_knn <- "data/classifier/full/pca_knn"
+path_pca_mlr <- "data/classifier/full/pca_mlr"
+path_mlr <- "data/classifier/full/mlr"
+path_knn <- "data/classifier/full/knn"
 
 # List all RDS files in a directory (change the path to your directory)
 file_naive <- list.files(path_naive, "*.rds", full.names = TRUE)
 file_pca_knn <- list.files(path_pca_knn, "*.rds", full.names = TRUE)
 file_pca_mlr <- list.files(path_pca_mlr, "*.rds", full.names = TRUE)
 file_mlr <- list.files(path_mlr, "*.rds", full.names = TRUE)
+file_knn <- list.files(path_knn, "*.rds", full.names = TRUE)
 
 # combine files
-file_list <- c(file_naive, file_pca_knn, file_pca_mlr, file_mlr)
+file_list <- c(file_naive, file_pca_knn, file_pca_mlr, file_mlr, file_knn)
 
 # Initialize an empty data frame to store the combined data
 data <- data.frame()
@@ -35,14 +42,15 @@ combinations <- lapply(seq_len(ncol(combinations)), function(col) {
                                                       combinations[, col]})
 
 # set the plotting order of classifiers
-cls_order <- c("naive", "pca_knn", "pca_mlr", "mlr")
+cls_order <- c("naive", "knn", "pca_knn", "mlr", "pca_mlr")
 
 
 # Plotting
 # boxplot comparison and statistical testing
 data_box <- data %>%
   group_by(classifier) %>%
-  filter(sample_size > 100) %>%
+  filter(tcr != 1) %>%
+  filter(sample_size < 100)
 
 filter <- data_box$clone_label == "persistent"
 tp_box_accuracy <- ggplot(data_box[filter, ],
