@@ -61,7 +61,8 @@ tp_box_accuracy <- ggplot(data_box[filter, ],
   ggsignif::geom_signif(test = "wilcox.test",
                         comparisons = combinations,
                         margin_top = 0.05, tip_length = 0.01, vjust = 0.4,
-                        map_signif_level = TRUE, textsize = 2.5,
+                        map_signif_level = c("***" = 0.001, "**" = 0.01,
+                                             "*" = 0.05), textsize = 2.5,
                         step_increase = 0.05) +
   xlab("Classifier") +
   ylab("Accuracy") +
@@ -78,7 +79,8 @@ tp_box_sensitivity <- ggplot(data_box,
   ggsignif::geom_signif(test = "wilcox.test",
                         comparisons = combinations,
                         margin_top = 0.05, tip_length = 0.01, vjust = 0.4,
-                        map_signif_level = TRUE, textsize = 2.5,
+                        map_signif_level = c("***" = 0.001, "**" = 0.01,
+                                             "*" = 0.05), textsize = 2.5,
                         step_increase = 0.05) +
   facet_wrap(~ clone_label, ncol = 3) +
   xlab("Classifier") +
@@ -96,7 +98,8 @@ tp_box_specificity <- ggplot(data_box,
   ggsignif::geom_signif(test = "wilcox.test",
                         comparisons = combinations,
                         margin_top = 0.05, tip_length = 0.01, vjust = 0.4,
-                        map_signif_level = TRUE, textsize = 2.5,
+                        map_signif_level = c("***" = 0.001, "**" = 0.01,
+                                             "*" = 0.05), textsize = 2.5,
                         step_increase = 0.05) +
   facet_wrap(~ clone_label, ncol = 3) +
   xlab("Classifier") +
