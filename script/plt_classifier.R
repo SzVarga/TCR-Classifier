@@ -69,7 +69,9 @@ tp_box_accuracy <- ggplot(data_box[filter, ],
   labs(title = "Classifier performance \nsample size > 100 cells",
        fill = "Classifier") +
   scale_x_discrete(limits = cls_order) +
-  theme_bw()
+  theme_bw() +
+  theme(title = element_text(size = 25),
+        text = element_text(size = 20))
 show(tp_box_accuracy)
 
 tp_box_sensitivity <- ggplot(data_box,
@@ -88,7 +90,10 @@ tp_box_sensitivity <- ggplot(data_box,
   labs(title = "Classifier performance \nsample size > 100 cells",
        fill = "Classifier") +
   scale_x_discrete(limits = cls_order) +
-  theme_bw()
+  theme_bw() +
+  theme(title = element_text(size = 25),
+        text = element_text(size = 20),
+        axis.text.x = element_text(angle = 45, hjust = 1))
 show(tp_box_sensitivity)
 
 tp_box_specificity <- ggplot(data_box,
@@ -107,13 +112,18 @@ tp_box_specificity <- ggplot(data_box,
   labs(title = "Classifier performance \nsample size > 100 cells",
        fill = "Classifier") +
   scale_x_discrete(limits = cls_order) +
-  theme_bw()
+  theme_bw() +
+  theme(title = element_text(size = 25),
+        text = element_text(size = 20),
+        axis.text.x = element_text(angle = 45, hjust = 1))
 show(tp_box_specificity)
 
 
 # accuracy of classifier against sample size
 robustness_data <- data %>%
-  filter(sample_size > 100) %>%
+  filter(tcr != 1) %>%
+  filter(classifier != "pca_mlr") %>%
+  filter(sample_size %in% c(25, 100, seq(250, 9750, 250))) %>%
   dplyr::group_by(sample_size, classifier) %>%
   dplyr::summarise(mean_ac = mean(accuracy),
                    sd_ac = sd(accuracy),
@@ -123,19 +133,24 @@ robustness_data <- data %>%
 rob_ac <- ggplot(data = robustness_data, aes(x = sample_size)) +
   geom_ribbon(aes(ymin = mean_ac - sd_ac, ymax = mean_ac + sd_ac,
                   color = classifier, fill = classifier), alpha = 0.2) +
-  facet_wrap(~ classifier, ncol = 2) +
+  facet_wrap(~ factor(classifier, levels = c("naive", "knn", "pca_knn", "mlr")),
+             ncol = 2) +
   geom_line(aes(y = mean_ac, color = classifier)) +
   xlab("Sample size") +
   ylab("Accuracy") +
   labs(title = "Classifier robustness",
        color = "Classifier", fill = "Classifier") +
-  theme_bw()
+  theme_bw() +
+  theme(title = element_text(size = 25),
+        text = element_text(size = 20))
 show(rob_ac)
 
 
 # robustness of classifier against sample size
 robustness_data_by_label <- data %>%
-  filter(sample_size > 100) %>%
+  filter(tcr != 1) %>%
+  filter(classifier %in% c("naive", "knn")) %>%
+  filter(sample_size > 500) %>%
   dplyr::group_by(sample_size, clone_label, classifier) %>%
   dplyr::summarise(mean_sens = mean(sensitivity),
                    sd_sens = sd(sensitivity),
@@ -145,25 +160,29 @@ robustness_data_by_label <- data %>%
 # plot robustness data
 rob_sens <- ggplot(data = robustness_data_by_label, aes(x = sample_size)) +
   geom_ribbon(aes(ymin = mean_sens - sd_sens, ymax = mean_sens + sd_sens,
-                  color = clone_label, fill = clone_label), alpha = 0.5) +
-  facet_wrap(~ classifier, ncol = 2) +
+                  color = clone_label, fill = clone_label), alpha = 0.2) +
+  facet_wrap(~ factor(classifier, levels = c("naive", "knn"))) +
   geom_line(aes(y = mean_sens, color = clone_label)) +
   xlab("Sample size") +
   ylab("Sensitivity") +
   labs(title = "Classifier robustness",
        color = "clone label", fill = "clone label") +
-  theme_bw()
+  theme_bw() +
+  theme(title = element_text(size = 25),
+        text = element_text(size = 20))
 show(rob_sens)
 
 # plot robustness data
 rob_spec <- ggplot(data = robustness_data_by_label, aes(x = sample_size)) +
   geom_ribbon(aes(ymin = mean_spec - sd_spec, ymax = mean_spec + sd_spec,
-                  color = clone_label, fill = clone_label), alpha = 0.5) +
-  facet_wrap(~ classifier, ncol = 2) +
+                  color = clone_label, fill = clone_label), alpha = 0.2) +
+  facet_wrap(~ factor(classifier, levels = c("naive", "knn"))) +
   geom_line(aes(y = mean_spec, color = clone_label)) +
   xlab("Sample size") +
   ylab("Specificity") +
   labs(title = "Classifier robustness",
        color = "clone label", fill = "clone label") +
-  theme_bw()
+  theme_bw() +
+  theme(title = element_text(size = 25),
+        text = element_text(size = 20))
 show(rob_spec)
