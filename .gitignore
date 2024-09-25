@@ -53,3 +53,6 @@ rsconnect/
 
 # additional files used for plotting results
 suppl/
+
+# singularity image
+*.sif

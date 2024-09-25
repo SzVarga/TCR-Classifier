@@ -1,0 +1,19 @@
+Bootstrap: docker
+From: rocker/tidyverse:4.4
+
+%post
+  # Update and install system dependencies
+  apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    git
+
+  # Install R packages from CRAN
+  R -e "install.packages('tidyverse')"
+	R -e "install.packages('vegan')"
+	R -e "install.packages('adaptivetau')"
+	R -e "install.packages('ggpubr')"
+	R -e "install.packages('ggfortify')"
+	R -e "install.packages('caret')"
+	R -e "install.packages('filelock')"
