@@ -12,41 +12,41 @@ set.seed(42)
 # CLI arguments
 args <- commandArgs(trailingOnly = TRUE)
 
-data_in <- args[1]                        # TCR collection data
-smpl_size <- ifelse(
+DATA_IN <- args[1]                        # TCR collection data
+TCR_ID <- 1                               # tcr id to sample from
+SMPL_SIZE <- ifelse(
   args[2] == "all",
   args[2],
   as.numeric(args[2]))                    # sample size
-data_out <- "data"                        # output directory
-detect_lim <- 3                           # clone detection limit
-draws <- 10000                            # resampling draws
-progress <- FALSE                         # show progress bar
+N_SMPL_LOOP <- 30                         # number of replicates
+DATA_OUT <- "data"                        # output directory
+DETECT_LIM <- 3                           # clone detection limit
+DRAWS <- 10000                            # resampling draws
+PROGRESS <- FALSE                         # show progress bar
 
-
-# load tcr_collection object
 tryCatch({
-  tcr_collection <- readRDS(data_in)
+  # load tcr_collection object
+  tcr_collection <- readRDS(DATA_IN)
+
+  # retreive a single tcr object
+  tcr <- tcr_collection[[TCR_ID]]
 }, error = function(e) {
   stop("Error reading data: ", e$message)
 })
 
-
 # main loop over all tcr objects
-for (i in seq_along(tcr_collection)) {
-
-  # retreive a single tcr object
-  tcr <- tcr_collection[[i]]
+for (i in seq(1, N_SMPL_LOOP, 1)) {
 
   # reference data
-  smpl <- list(P1 = sample_at(tcr, smpl_size, "P1", detect_lim = detect_lim),
-               S1 = sample_at(tcr, smpl_size, "S1", detect_lim = detect_lim),
-               S2 = sample_at(tcr, smpl_size, "S2", detect_lim = detect_lim))
+  smpl <- list(P1 = sample_at(tcr, SMPL_SIZE, "P1", detect_lim = DETECT_LIM),
+               S1 = sample_at(tcr, SMPL_SIZE, "S1", detect_lim = DETECT_LIM),
+               S2 = sample_at(tcr, SMPL_SIZE, "S2", detect_lim = DETECT_LIM))
 
   # combine ref data
   smpl <- do.call(sample_bind, smpl)
 
   # calculate measures
-  measures <- get_measures(tcr, smpl, draws = draws, progress = progress)
+  measures <- get_measures(tcr, smpl, draws = DRAWS, progress = PROGRESS)
 
   # create subdata by transposing the sample matrix
   subdata <- t(smpl)
@@ -60,8 +60,8 @@ for (i in seq_along(tcr_collection)) {
 
     # add additional information
     clone <- as.numeric(rownames(subdata))
-    sample_size <- rep(smpl_size, nrow(subdata))
-    tcr_id <- rep(i, nrow(subdata))
+    sample_size <- rep(SMPL_SIZE, nrow(subdata))
+    tcr_id <- rep(TCR_ID, nrow(subdata))
     label <- sapply(clone, function(x) {tcr$clonotypes[[x]]$label})
     subdata <- cbind(tcr_id, clone, sample_size, subdata, label)
 
@@ -71,7 +71,7 @@ for (i in seq_along(tcr_collection)) {
 
   # save output
   # Define the file path
-  file_path <- file.path(data_out, "sample_table.csv")
+  file_path <- file.path(DATA_OUT, "sample_table.csv")
 
   # Write or append the subdata to the CSV file
   if (!file.exists(file_path)) {
