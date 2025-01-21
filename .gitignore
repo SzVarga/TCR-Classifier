@@ -51,6 +51,9 @@ rsconnect/
 # data folder
 data/
 
+# experimental scripts written in python
+py/
+
 # additional files used for plotting results
 suppl/
 
