@@ -50,6 +50,7 @@ rsconnect/
 
 # data folder
 data/
+plots/
 
 # experimental scripts written in python
 py/

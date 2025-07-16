@@ -623,6 +623,52 @@ tcr_temporal_comp <- function(data, ...) {
   return(plt)
 }
 
+# Distribution sampling functions
+#' Sample from skewed normal distribution
+#'
+#' This function generates a random sample from a skewed normal distribution
+#' with specified mean, standard deviation, and shape parameters. The skewed
+#' normal distribution extends the normal distribution by adding a shape
+#' parameter that controls the skewness (asymmetry) of the distribution.
+#'
+#' @param mean Mean parameter of the distribution (location parameter)
+#' @param sd Standard deviation parameter (scale parameter, must be positive)
+#' @param shape Shape parameter controlling skewness (0 = normal distribution)
+#'   Positive values create right skew, negative values create left skew
+#' @return A single random value from the skewed normal distribution
+#'
+#' @details
+#' The skewed normal distribution is useful for modeling biological parameters
+#' that may have asymmetric distributions. When shape = 0, this reduces to
+#' the standard normal distribution. Requires the sn package for implementation.
+#'
+#' @examples
+#' # Sample from symmetric distribution (normal)
+#' sample_skewed_normal(mean = 0.008, sd = 0.001, shape = 0)
+#'
+#' # Sample from right-skewed distribution
+#' sample_skewed_normal(mean = 0.008, sd = 0.001, shape = 2)
+#'
+#' # Sample from left-skewed distribution
+#' sample_skewed_normal(mean = 0.008, sd = 0.001, shape = -2)
+#'
+#' @export
+sample_skewed_normal <- function(mean, sd, shape) {
+  # Validate input parameters
+  if (!is.numeric(mean) || length(mean) != 1) {
+    stop("mean must be a single numeric value")
+  }
+  if (!is.numeric(sd) || length(sd) != 1 || sd <= 0) {
+    stop("sd must be a single positive numeric value")
+  }
+  if (!is.numeric(shape) || length(shape) != 1) {
+    stop("shape must be a single numeric value")
+  }
+  
+  # Sample from skewed normal distribution using sn package
+  return(sn::rsn(n = 1, xi = mean, omega = sd, alpha = shape))
+}
+
 #' Create a temporal box and evolution plot for TCR data.
 #'
 #' This function generates a plot combining a boxplot of clone size distribution

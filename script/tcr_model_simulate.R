@@ -6,6 +6,7 @@ set.seed(20220314)
 
 # load libraries and functions
 require(adaptivetau)    # for stochastic model simulation
+require(sn)             # for skewed normal distribution
 source("R/tcr_model.R") # for tcr model handling
 
 # get command line argument provided by the sbatch file
@@ -19,13 +20,24 @@ data_dir <- "data/tcr_data/"
 data_name <- paste0("tcrColl_", num_clones, "clo_a", clone_size, "_x",
                     param_scale, ".rds")
 
-# parameters for clonal dynamics
-birth_pers <- param_scale * c(0.008, 0.008, 0.008)
-death_pers <- param_scale * c(0.0032, 0.0032, 0.0032)
-birth_cont <- param_scale * c(0.008, 0.008, 0.008)
-death_cont <- param_scale * c(0.0042, 0.0042, 0.0042)
-birth_late <- param_scale * c(0, 0, 0.010)
-death_late <- param_scale * c(0, 0, 0.0028)
+# parameters for clonal dynamics - using skewed normal distribution
+birth_pers_val <- sample_skewed_normal(param_scale * 0.008, param_scale * 0.0008, 0)
+birth_pers <- c(birth_pers_val, birth_pers_val, birth_pers_val)
+
+death_pers_val <- sample_skewed_normal(param_scale * 0.0032, param_scale * 0.00032, 0)
+death_pers <- c(death_pers_val, death_pers_val, death_pers_val)
+
+birth_cont_val <- sample_skewed_normal(param_scale * 0.008, param_scale * 0.0008, 0)
+birth_cont <- c(birth_cont_val, birth_cont_val, birth_cont_val)
+
+death_cont_val <- sample_skewed_normal(param_scale * 0.0042, param_scale * 0.00042, 0)
+death_cont <- c(death_cont_val, death_cont_val, death_cont_val)
+
+birth_late_val <- sample_skewed_normal(param_scale * 0.010, param_scale * 0.001, 0)
+birth_late <- c(0, 0, birth_late_val)
+
+death_late_val <- sample_skewed_normal(param_scale * 0.0028, param_scale * 0.00028, 0)
+death_late <- c(0, 0, death_late_val)
 
 tcr_collection <- list()
 for (generation in 1:num_generations) {
