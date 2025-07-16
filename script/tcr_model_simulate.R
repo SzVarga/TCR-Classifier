@@ -51,8 +51,8 @@ for (generation in 1:num_generations) {
                      death = rep(death_cont_val, 9))
     tcr <- add_clone(tcr = tcr, label = "late_emerging",
                      init_size = 1,
-                     birth = c(rep(0, 5), rep(birth_late_val, 4)),
-                     death = c(rep(0, 5), rep(death_late_val, 4)))
+                     birth = c(rep(0, 6), rep(birth_late_val, 3)),
+                     death = c(rep(0, 6), rep(death_late_val, 3)))
 }
 
   # perform tcr-repertoire simulation
