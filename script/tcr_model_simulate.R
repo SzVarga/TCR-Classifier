@@ -22,28 +22,28 @@ data_name <- paste0("tcrColl_", num_clones, "clo_a", clone_size, "_x",
 
 # parameters for clonal dynamics - using skewed normal distribution
 birth_pers_val <- sample_skewed_normal(param_scale * 0.008, param_scale * 0.0008, 0)
-birth_pers <- c(birth_pers_val, birth_pers_val, birth_pers_val)
+birth_pers <- rep(birth_pers_val, 9)
 
 death_pers_val <- sample_skewed_normal(param_scale * 0.0032, param_scale * 0.00032, 0)
-death_pers <- c(death_pers_val, death_pers_val, death_pers_val)
+death_pers <- rep(death_pers_val, 9)
 
 birth_cont_val <- sample_skewed_normal(param_scale * 0.008, param_scale * 0.0008, 0)
-birth_cont <- c(birth_cont_val, birth_cont_val, birth_cont_val)
+birth_cont <- rep(birth_cont_val, 9)
 
 death_cont_val <- sample_skewed_normal(param_scale * 0.0042, param_scale * 0.00042, 0)
-death_cont <- c(death_cont_val, death_cont_val, death_cont_val)
+death_cont <- rep(death_cont_val, 9)
 
 birth_late_val <- sample_skewed_normal(param_scale * 0.010, param_scale * 0.001, 0)
-birth_late <- c(0, 0, birth_late_val)
+birth_late <- c(rep(0, 5), rep(birth_late_val, 4))
 
 death_late_val <- sample_skewed_normal(param_scale * 0.0028, param_scale * 0.00028, 0)
-death_late <- c(0, 0, death_late_val)
+death_late <- c(rep(0, 5), rep(death_late_val, 4))
 
 tcr_collection <- list()
 for (generation in 1:num_generations) {
     # create a tcr object
-    tcr <- new_tcr(sim_times = c("P1" = 10, "S1" = 10, "S2" = 10),
-                  carry_cap = num_clones * clone_size / 0.6)
+    tcr <- new_tcr(sim_times = c("P10"=10, "V2"=10, "S10"=10, "S68"=58, "S210"=152, "V3"=20, "T10"=10, "T108"=98, "T189"=79),
+                   carry_cap = num_clones * clone_size / 0.6)
 
 
     # add clones to TCR-repertoire
