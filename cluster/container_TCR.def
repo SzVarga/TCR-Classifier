@@ -17,3 +17,4 @@ From: rocker/tidyverse:4.4
 	R -e "install.packages('ggfortify')"
 	R -e "install.packages('caret')"
 	R -e "install.packages('filelock')"
+  R -e "install.packages('sn')"
