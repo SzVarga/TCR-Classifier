@@ -18,14 +18,20 @@ library(sn)
 source("R/tcr_model.R")
 source("R/tcr_model_prime_boost.R")
 
+get_logistic_death <- function(birth_rate, carry_cap, eff_cap = 0.95) {
+  # Calculate the logistic death rate based on birth rate and carrying capacity
+  death_rate <- birth_rate * (1 - (carry_cap * eff_cap) / carry_cap)
+  return(death_rate)
+}
+
 # Set simulation parameters
 sim_times <- c("P10" = 10, "V2" = 10, "S10" = 10, "S68" = 58,
                "S210" = 152, "V3" = 20, "T10" = 10, "T108" = 98, "T189" = 79)
 param_scale <- 100
 num_generations <- 1
-num_clones <- 3
+num_clones <- 100
 clone_size <- 100
-carry_cap <- num_clones * clone_size / 0.6
+carry_cap <- num_clones * clone_size * 2 # Mainly persistent and late emerging clones
 data_dir <- "data/tcr_data/"
 data_name <- paste0("tcrColl_", num_clones, "clo_a", clone_size, "_x",
                     param_scale, ".rds")
@@ -36,52 +42,61 @@ cat("=========================================\n")
 
 # Define viral parameters for prime-boost
 viral_params_prime_boost <- list(
-  initial_load = 100,                           # Initial viral load
-  replication_rate = param_scale * 0.008,       # High replication during active periods
-  clearance_rate = param_scale * 0.001,         # Clearance rate
+  initial_load = 10,           # dV/dt = r(t) × V - c × T_total × V
+  replication_rate = 4E-1,      # log(V) ~ 2
+  clearance_rate = 8E-6,        # 100clones x 100cells x 1E2 viruses ~ 1E6
   replication_intervals = list(
-    c(0, 14),                   # Prime: days 0-14
-    c(20, 34),                  # Boost V2: days 20-34
-    c(260, 274)                 # Boost V3: days 260-274
+    c(0, 7),                    # Prime: days 0-14
+    c(20, 27),                  # Boost V2: days 20-34
+    c(260, 267)                 # Boost V3: days 260-274
   )
 )
-
 
 tcr_collection <- list()
 for (generation in 1:num_generations) {
   # Create TCR repertoire with viral parameters
   tcr_prime_boost <- new_tcr_primeBoostModel(sim_times, carry_cap, viral_params_prime_boost)
 
-  # Add clones with different avidity levels
-  # Persistent clones: high avidity (strong TCR-antigen binding)
-  tcr_prime_boost <- add_clone_prime_boost_model(
-    tcr = tcr_prime_boost,
-    label = "persistent",
-    init_size = clone_size,
-    birth = rep(param_scale * 0.008, 9),
-    death = rep(param_scale * 0.0032, 9),
-    avidity = 0.5             # High avidity -> strong proliferation response
-  )
+  for (i in 1:num_clones) {
+    # Randomly select clone parameters
+    birth_persistent <- sample_skewed_normal(param_scale * 0.0008, param_scale * 0.0008, 0)
+    death_persistent <- get_logistic_death(birth_persistent, carry_cap)
+    birth_contracting <- sample_skewed_normal(param_scale * 0.0008, param_scale * 0.00008, 0)
+    death_contracting <- get_logistic_death(birth_contracting, carry_cap) * sample_skewed_normal(3, 0.5, 0)
+    birth_late_emerging <- sample_skewed_normal(param_scale * 0.0008, param_scale * 0.0008 * 1e-2, 0) * sample_skewed_normal(6, 2, 0)
+    death_late_emerging <- get_logistic_death(birth_late_emerging, carry_cap) * sample_skewed_normal(0.01, 0.001, 0)
 
-  # Contracting clones: moderate avidity
-  tcr_prime_boost <- add_clone_prime_boost_model(
-    tcr = tcr_prime_boost,
-    label = "contracting",
-    init_size = clone_size,
-    birth = rep(param_scale * 0.008, 9),
-    death = rep(param_scale * 0.0042, 9),
-    avidity = 0.1             # Moderate avidity -> moderate response
-  )
+    # Add clones with different avidity levels
+    # Persistent clones: high avidity (strong TCR-antigen binding)
+    tcr_prime_boost <- add_clone_prime_boost_model(
+      tcr = tcr_prime_boost,
+      label = "persistent",
+      init_size = clone_size,
+      birth = rep(birth_persistent, 9),
+      death = rep(death_persistent, 9),
+      avidity = 0
+    )
 
-  # Late emerging clones: very high avidity (strongest binders)
-  tcr_prime_boost <- add_clone_prime_boost_model(
-    tcr = tcr_prime_boost,
-    label = "late_emerging",
-    init_size = 3,
-    birth = c(rep(0, 6), rep(param_scale * 0.010, 3)), # Late emerging pattern
-    death = c(rep(0, 6), rep(param_scale * 0.0028, 3)),
-    avidity = 0             # Very high avidity -> strongest response
-  )
+    # Contracting clones: moderate avidity
+    tcr_prime_boost <- add_clone_prime_boost_model(
+      tcr = tcr_prime_boost,
+      label = "contracting",
+      init_size = clone_size,
+      birth = rep(birth_contracting, 9),
+      death = rep(death_contracting, 9),
+      avidity = 0
+    )
+
+    # Late emerging clones: very high avidity (strongest binders)
+    tcr_prime_boost <- add_clone_prime_boost_model(
+      tcr = tcr_prime_boost,
+      label = "late_emerging",
+      init_size = 3,
+      birth = c(rep(0, 6), rep(birth_late_emerging, 3)), # Late emerging pattern
+      death = c(rep(0, 6), rep(death_late_emerging, 3)),
+      avidity = 0
+    )
+  }
 
   # Run simulation
   cat("Running prime-boost simulation...\n")

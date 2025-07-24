@@ -13,6 +13,7 @@
 #'   - clearance_rate: Immune-mediated viral clearance rate per T cell (numeric)
 #'   - replication_intervals: List of [start, end] time intervals when virus replicates
 #'   - viral_burden_sensitivity: System-wide sensitivity to cumulative viral burden (numeric, default: 0)
+#'   - min_replication_load: Minimum viral load to maintain when replication starts (numeric, default: 10)
 #' @return A new TCR object with viral dynamics support.
 #'
 #' @examples
@@ -48,6 +49,13 @@ new_tcr_primeBoostModel <- function(sim_times, carry_cap, viral_params) {
     viral_params$viral_burden_sensitivity <- 0
   }
   stopifnot(is.numeric(viral_params$viral_burden_sensitivity))
+  
+  # Set default minimum viral load for replication start if not provided
+  if (is.null(viral_params$min_replication_load)) {
+    viral_params$min_replication_load <- 10
+  }
+  stopifnot(is.numeric(viral_params$min_replication_load))
+  stopifnot(viral_params$min_replication_load >= 0)
   
   # reset id numbers
   reset_id_counter()
@@ -211,7 +219,7 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
         avidity_param <- paste("avidity", i, sep = ".")
         
         # Base birth rate with logistic growth and viral burden effect
-        base_birth_rate <- params[[birth_param]] * clone_vars[[i]] * (1 - pop_all / carry_cap)
+        base_birth_rate <- max(0, params[[birth_param]] * clone_vars[[i]] * (1 - pop_all / carry_cap))
         
         # Modify base birth rate based on cumulative viral burden
         if (params$viral_burden_sensitivity > 0 && cumulative_burden > 0) {
@@ -221,14 +229,14 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
         
         # Apply avidity-based proliferation boost if parameter exists
         if (avidity_param %in% names(params) && viral_load > 0) {
-          avidity_boost <- params[[avidity_param]] * viral_load
+          avidity_boost <- params[[birth_param]] * params[[avidity_param]] * viral_load
           birth_rate <- max(0, base_birth_rate + avidity_boost)
         } else {
           birth_rate <- max(0, base_birth_rate)
         }
         
         # Death rate
-        death_rate <- params[[death_param]] * clone_vars[[i]]
+        death_rate <- max(0, params[[death_param]] * clone_vars[[i]])
         
         vec <- c(vec, birth_rate, death_rate)
       }
@@ -241,10 +249,10 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
       )
       
       # Viral replication (only when active)
-      viral_replication_rate <- replication_active * params$viral_replication * viral_load
+      viral_replication_rate <- max(0, replication_active * params$viral_replication * viral_load)
       
       # Viral clearance (immune-mediated only, based on total population)
-      viral_clearance <- params$viral_clearance * pop_all * viral_load
+      viral_clearance <- max(0, params$viral_clearance * pop_all * viral_load)
       
       # Add viral rates to the vector
       vec <- c(vec, viral_replication_rate, viral_clearance)
@@ -320,6 +328,16 @@ tcr_simulate_prime_boost_model <- function(repertoire, ...) {
                          `names<-`(results[nrow(results), col],
                                    colnames(results)[col]))
       }
+    }
+
+    # Check if viral replication is starting at this global time and boost if needed
+    replication_starting <- is_viral_replication_active(glob_time, repertoire$viral_params$replication_intervals)
+    current_viral_load <- init_values["virus"]
+    min_load <- repertoire$viral_params$min_replication_load
+    
+    if (replication_starting && current_viral_load < min_load) {
+      init_values["virus"] <- min_load
+      cat("Viral load boosted to", min_load, "at global time", glob_time, "\n")
     }
 
     # simulate time partition with current global time
