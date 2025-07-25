@@ -49,7 +49,8 @@ viral_params_prime_boost <- list(
     c(0, 7),                    # Prime: days 0-14
     c(20, 27),                  # Boost V2: days 20-34
     c(260, 267)                 # Boost V3: days 260-274
-  )
+  ),
+  viral_burden_sensitivity = 0  # Enable cumulative viral burden effect
 )
 
 tcr_collection <- list()

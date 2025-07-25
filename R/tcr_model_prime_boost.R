@@ -106,37 +106,6 @@ is_viral_replication_active <- function(current_time, replication_intervals) {
   return(0)  # Virus does not replicate
 }
 
-#' Calculate cumulative viral burden from simulation results.
-#'
-#' This helper function calculates the cumulative viral load by summing
-#' all viral particles seen at previous time points.
-#'
-#' @param results_data Matrix containing simulation results with virus column
-#' @param current_time Current simulation time point
-#' @return Sum of all viral particles from previous time points
-#'
-calculate_cumulative_viral_burden <- function(results_data, current_time) {
-  if (is.null(results_data) || length(results_data) == 0 || 
-      !is.matrix(results_data) || nrow(results_data) == 0) {
-    return(0)  # No previous data or empty matrix
-  }
-  
-  # Check if required columns exist
-  if (is.null(colnames(results_data)) || 
-      !("time" %in% colnames(results_data)) || 
-      !("virus" %in% colnames(results_data))) {
-    return(0)  # Missing required columns
-  }
-  
-  # Sum all viral loads from previous time points
-  previous_time_filter <- results_data[, "time"] < current_time
-  if (!any(previous_time_filter)) {
-    return(0)  # No previous time points
-  }
-  
-  previous_viral_loads <- results_data[previous_time_filter, "virus"]
-  return(sum(previous_viral_loads))
-}
 
 #' Simulate stochastic clonal dynamics with viral load
 #' of the TCR (T-cell receptor) over a time partition.
@@ -181,8 +150,8 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
       }
     }
     
-    # Add viral transitions: replication (+1) and clearance (-1)
-    transitions <- c(transitions, list(c(virus = 1)), list(c(virus = -1)))
+    # Add viral transitions: replication (+1 virus, +1 cumulative_burden) and clearance (-1 virus only)
+    transitions <- c(transitions, list(c(virus = 1, cumulative_burden = 1)), list(c(virus = -1, cumulative_burden = 1)))
     
     # Add viral parameters
     viral_replication_param <- c(`names<-`(repertoire$viral_params$replication_rate, "viral_replication"))
@@ -200,16 +169,13 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
 
     # Enhanced rate function with viral dynamics
     rate_func <- function(vars, params, t) {
-      # Extract populations (last element is virus)
-      clone_vars <- vars[1:(length(vars)-1)]
-      viral_load <- vars[length(vars)]
+      # Extract populations (last two elements are virus and cumulative_burden)
+      clone_vars <- vars[1:(length(vars)-2)]
+      viral_load <- vars[length(vars)-1]
+      cumulative_burden <- vars[length(vars)]
       
       # Calculate total clone population
       pop_all <- sum(clone_vars)
-      
-      # Calculate cumulative viral burden for this time point
-      current_absolute_time <- params$global_time + t
-      cumulative_burden <- calculate_cumulative_viral_burden(params$repertoire_data, current_absolute_time)
 
       # Calculate rate transitions for clones
       vec <- c()
@@ -223,8 +189,8 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
         
         # Modify base birth rate based on cumulative viral burden
         if (params$viral_burden_sensitivity > 0 && cumulative_burden > 0) {
-          viral_burden_effect <- params$viral_burden_sensitivity * log10(cumulative_burden + 1)
-          base_birth_rate <- base_birth_rate * (1 + viral_burden_effect)
+          viral_burden_effect <- params[[birth_param]] * params$viral_burden_sensitivity * cumulative_burden
+          base_birth_rate <- base_birth_rate + viral_burden_effect
         }
         
         # Apply avidity-based proliferation boost if parameter exists
@@ -266,10 +232,10 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
                                          rate_func, params,
                                          repertoire$sim_times[[param_idx]])
 
-    # calculate total clone population size (excluding virus)
+    # calculate total clone population size (excluding virus and cumulative_burden)
     total_clones <- c()
     for (i in seq_len(nrow(data))) {
-      total_clones <- c(total_clones, sum(data[i, 2:(ncol(data)-1)]))
+      total_clones <- c(total_clones, sum(data[i, 2:(ncol(data)-2)]))
     }
 
     # collect data with virus and total_clones columns
@@ -316,14 +282,15 @@ tcr_simulate_prime_boost_model <- function(repertoire, ...) {
         init_values <- c(init_values,
                          `names<-`(clonotype$init_size, clonotype$clone_id))
       }
-      # add initial viral load
+      # add initial viral load and cumulative burden
       init_values <- c(init_values,
-                       `names<-`(repertoire$viral_params$initial_load, "virus"))
+                       `names<-`(repertoire$viral_params$initial_load, "virus"),
+                       `names<-`(repertoire$viral_params$initial_load, "cumulative_burden"))
     } else {
       #clear init.values
       init_values <- c()
       # fetch from results (all columns except time and total_clones)
-      for (col in 2:(ncol(data) - 1)) {
+      for (col in 2:(ncol(results) - 1)) {
         init_values <- c(init_values,
                          `names<-`(results[nrow(results), col],
                                    colnames(results)[col]))
