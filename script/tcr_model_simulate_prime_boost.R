@@ -25,7 +25,8 @@ get_logistic_death <- function(birth_rate, carry_cap, eff_cap = 0.95) {
 }
 
 # Set simulation parameters
-sim_times <- c("P10" = 10, "V2" = 10, "S10" = 10, "S68" = 58,
+bip <- 50
+sim_times <- c("burn-in" = bip, "P10" = 10, "V2" = 10, "S10" = 10, "S68" = 58,
                "S210" = 152, "V3" = 20, "T10" = 10, "T108" = 98, "T189" = 79)
 param_scale <- 100
 num_generations <- 1
@@ -42,13 +43,13 @@ cat("=========================================\n")
 
 # Define viral parameters for prime-boost
 viral_params_prime_boost <- list(
-  initial_load = 10,           # dV/dt = r(t) × V - c × T_total × V
+  initial_load = 0,             # dV/dt = r(t) × V - c × T_total × V
   replication_rate = 4E-1,      # log(V) ~ 2
   clearance_rate = 8E-6,        # 100clones x 100cells x 1E2 viruses ~ 1E6
   replication_intervals = list(
-    c(0, 7),                    # Prime: days 0-14
-    c(20, 27),                  # Boost V2: days 20-34
-    c(260, 267)                 # Boost V3: days 260-274
+    c(0, 7)+bip,                    # Prime: days 0-7 + burn-in-phase
+    c(20, 27)+bip,                    # Boost V2: days 20-27
+    c(260, 267)+bip                   # Boost V3: days 260-267
   ),
   viral_burden_sensitivity = 0  # Enable cumulative viral burden effect
 )
@@ -73,8 +74,8 @@ for (generation in 1:num_generations) {
       tcr = tcr_prime_boost,
       label = "persistent",
       init_size = clone_size,
-      birth = rep(birth_persistent, 9),
-      death = rep(death_persistent, 9),
+      birth = c(birth_persistent, rep(birth_persistent, 9)),
+      death = c(get_logistic_death(birth_persistent, carry_cap), rep(death_persistent, 9)),
       avidity = 0
     )
 
@@ -83,8 +84,8 @@ for (generation in 1:num_generations) {
       tcr = tcr_prime_boost,
       label = "contracting",
       init_size = clone_size,
-      birth = rep(birth_contracting, 9),
-      death = rep(death_contracting, 9),
+      birth = c(birth_contracting, rep(birth_contracting, 9)),
+      death = c(get_logistic_death(birth_contracting, carry_cap), rep(death_contracting, 9)),
       avidity = 0
     )
 
@@ -93,8 +94,8 @@ for (generation in 1:num_generations) {
       tcr = tcr_prime_boost,
       label = "late_emerging",
       init_size = 3,
-      birth = c(rep(0, 6), rep(birth_late_emerging, 3)), # Late emerging pattern
-      death = c(rep(0, 6), rep(death_late_emerging, 3)),
+      birth = c(rep(0, 7), rep(birth_late_emerging, 3)), # Late emerging pattern
+      death = c(rep(0, 7), rep(death_late_emerging, 3)),
       avidity = 0
     )
   }
