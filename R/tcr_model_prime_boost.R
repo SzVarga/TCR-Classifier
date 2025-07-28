@@ -14,6 +14,7 @@
 #'   - replication_intervals: List of [start, end] time intervals when virus replicates
 #'   - viral_burden_sensitivity: System-wide sensitivity to cumulative viral burden (numeric, default: 0)
 #'   - min_replication_load: Minimum viral load to maintain when replication starts (numeric, default: 10)
+#' @param simulation_method The simulation method to use: "adaptivetau" (default) or "exact"
 #' @return A new TCR object with viral dynamics support.
 #'
 #' @examples
@@ -28,7 +29,7 @@
 #' tcr <- new_tcr_primeBoostModel(sim_times, carry_cap, viral_params)
 #'
 #' @export
-new_tcr_primeBoostModel <- function(sim_times, carry_cap, viral_params) {
+new_tcr_primeBoostModel <- function(sim_times, carry_cap, viral_params, simulation_method = "adaptivetau") {
   # sim_times must have length 1 or more
   stopifnot(length(sim_times) >= 1)
   
@@ -57,6 +58,9 @@ new_tcr_primeBoostModel <- function(sim_times, carry_cap, viral_params) {
   stopifnot(is.numeric(viral_params$min_replication_load))
   stopifnot(viral_params$min_replication_load >= 0)
   
+  # Validate simulation method
+  stopifnot(simulation_method %in% c("adaptivetau", "exact"))
+  
   # reset id numbers
   reset_id_counter()
 
@@ -67,7 +71,8 @@ new_tcr_primeBoostModel <- function(sim_times, carry_cap, viral_params) {
     carry_cap = carry_cap,
     clone_labels = c(),
     data = matrix(),
-    viral_params = viral_params
+    viral_params = viral_params,
+    simulation_method = simulation_method
   )
   return(tcr)
 }
@@ -227,10 +232,16 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
       return(vec)
     }
 
-    # perform the simulation
-    data <- adaptivetau::ssa.adaptivetau(init_values, transitions,
-                                         rate_func, params,
-                                         repertoire$sim_times[[param_idx]])
+    # perform the simulation using the configured method
+    if (repertoire$simulation_method == "exact") {
+      data <- adaptivetau::ssa.exact(init_values, transitions,
+                                     rate_func, params,
+                                     repertoire$sim_times[[param_idx]])
+    } else {
+      data <- adaptivetau::ssa.adaptivetau(init_values, transitions,
+                                           rate_func, params,
+                                           repertoire$sim_times[[param_idx]])
+    }
 
     # calculate total clone population size (excluding virus and cumulative_burden)
     total_clones <- c()

@@ -33,6 +33,7 @@ num_generations <- 1
 num_clones <- 100
 clone_size <- 100
 carry_cap <- num_clones * clone_size * 2 # Mainly persistent and late emerging clones
+sim_method <- "adaptivetau"  # Options: "adaptivetau" or "exact"
 data_dir <- "data/tcr_data/"
 data_name <- paste0("tcrColl_", num_clones, "clo_a", clone_size, "_x",
                     param_scale, ".rds")
@@ -57,7 +58,7 @@ viral_params_prime_boost <- list(
 tcr_collection <- list()
 for (generation in 1:num_generations) {
   # Create TCR repertoire with viral parameters
-  tcr_prime_boost <- new_tcr_primeBoostModel(sim_times, carry_cap, viral_params_prime_boost)
+  tcr_prime_boost <- new_tcr_primeBoostModel(sim_times, carry_cap, viral_params_prime_boost, sim_method)
 
   for (i in 1:num_clones) {
     # Randomly select clone parameters
