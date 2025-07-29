@@ -276,3 +276,202 @@ measure_scale <- function(measure, ...) {
 
   return(measure)
 }
+
+#' Calculate diversity and overlap measures for prime-boost samples.
+#'
+#' This function calculates diversity and overlap measures,
+#' including Simpson's Index, Morisita-Horn Index, and Chao-Jaccard Index,
+#' for clones sampled at hard-coded time points. It estimates 
+#' these measures for each clone in the repertoire based on downsampling of the 
+#' sample table, to avoid sampling bias.
+#'
+#' @param tcr A TCR repertoire object.
+#' @param smpl_table A sample table representing the abundance of each clone
+#' in the samples. Rows correspond to different time points, and columns
+#' correspond to clone IDs.
+#' @param draws The number of random draws to generate the resampled
+#' abundance data.
+#' @param progress A logical value indicating whether to display a progress bar.
+#'
+#' @return A list containing diversity and overlap measures for each clone.
+#'        The list includes the following components:
+#'        - label_vec: A vector of clone labels corresponding to each clone.
+#'        - measure_matrix: A matrix containing the calculated diversity and
+#'        overlap measures for each clone.
+#'
+#' @export
+get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = FALSE) {
+  # determine size nR (nR < nE) to which TCR set needs to be reduced
+  smpl_min <- sample_min_size(smpl_table)
+
+  # crete empty measure list
+  measures <- list()
+
+  if (progress) {
+    # Create a progress bar
+    pb <- utils::txtProgressBar(min = 0, max = ncol(smpl_table), style = 3)
+  }
+
+  for (i in seq_along(colnames(smpl_table))) {
+    # clone id
+    clo_id <- as.numeric(colnames(smpl_table)[i])
+
+    # Simpson
+    si_p10_d <- numeric(draws)
+    si_s10_d <- numeric(draws)
+    si_s68_d <- numeric(draws)
+    si_s210_d <- numeric(draws)
+    si_t10_d <- numeric(draws)
+    si_t108_d <- numeric(draws)
+    si_t189_d <- numeric(draws)
+
+    # Morisita-Horn
+    mh_s68s10_d <- numeric(draws)
+    mh_s210s10_d <- numeric(draws)
+    mh_s210s68_d <- numeric(draws)
+
+    mh_t108t10_d <- numeric(draws)
+    mh_t189t10_d <- numeric(draws)
+    mh_t189t108_d <- numeric(draws)
+
+    mh_s10p10_d <- numeric(draws)
+    mh_t10p10_d <- numeric(draws)
+    mh_t10s10_d <- numeric(draws)
+
+    mh_t108s68_d <- numeric(draws)
+    mh_t189s210_d <- numeric(draws)
+
+    mh_t189p10_d <- numeric(draws)
+
+    # Chao-Jaccard
+    ch_s68s10_d <- numeric(draws)
+    ch_s210s10_d <- numeric(draws)
+    ch_s210s68_d <- numeric(draws)
+
+    ch_t108t10_d <- numeric(draws)
+    ch_t189t10_d <- numeric(draws)
+    ch_t189t108_d <- numeric(draws)
+
+    ch_s10p10_d <- numeric(draws)
+    ch_t10p10_d <- numeric(draws)
+    ch_t10s10_d <- numeric(draws)
+
+    ch_t108s68_d <- numeric(draws)
+    ch_t189s210_d <- numeric(draws)
+
+    ch_t189p10_d <- numeric(draws)
+
+    for (draw in seq(1, draws)) {
+      # randomly draw, without replacement, nR TCRs from the set of nE TCRs
+      draw_w <- sample_reduce(smpl_table, smpl_min, clone = clo_id, incl = T)
+      draw_wo <- sample_reduce(smpl_table, smpl_min, clone = clo_id, incl = F)
+
+      # calculate the div/ovlp measures for the reduced set
+      # Simpson
+      si_p10_d[draw] <- si(draw_w["P10", ]) - si(draw_wo["P10", ])
+      si_s10_d[draw] <- si(draw_w["S10", ]) - si(draw_wo["S10", ])
+      si_s68_d[draw] <- si(draw_w["S68", ]) - si(draw_wo["S68", ])
+      si_s210_d[draw] <- si(draw_w["S210", ]) - si(draw_wo["S210", ])
+      si_t10_d[draw] <- si(draw_w["T10", ]) - si(draw_wo["T10", ])
+      si_t108_d[draw] <- si(draw_w["T108", ]) - si(draw_wo["T108", ])
+      si_t189_d[draw] <- si(draw_w["T189", ]) - si(draw_wo["T189", ])
+
+      # Morisita-Horn
+      mh_w <- mh(draw_w)
+      mh_wo <- mh(draw_wo)
+      mh_s68s10_d <- mh_w["S68", "S10"] - mh_wo["S68", "S10"]
+      mh_s210s10_d <- mh_w["S210", "S10"] - mh_wo["S210", "S10"]
+      mh_s210s68_d <- mh_w["S210", "S68"] - mh_wo["S210", "S68"]
+      mh_t108t10_d <- mh_w["T108", "T10"] - mh_wo["T108", "T10"]
+      mh_t189t10_d <- mh_w["T189", "T10"] - mh_wo["T189", "T10"]
+      mh_t189t108_d <- mh_w["T189", "T108"] - mh_wo["T189", "T108"]
+      mh_s10p10_d <- mh_w["S10", "P10"] - mh_wo["S10", "P10"]
+      mh_t10p10_d <- mh_w["T10", "P10"] - mh_wo["T10", "P10"]
+      mh_t10s10_d <- mh_w["T10", "S10"] - mh_wo["T10", "S10"]
+      mh_t108s68_d <- mh_w["T108", "S68"] - mh_wo["T108", "S68"]
+      mh_t189s210_d <- mh_w["T189", "S210"] - mh_wo["T189", "S210"]
+      mh_t189p10_d <- mh_w["T189", "P10"] - mh_wo["T189", "P10"]
+
+      # Chao-Jaccard
+      ch_w <- ch(draw_w)
+      ch_wo <- ch(draw_wo)
+      ch_s68s10_d <- ch_w["S68", "S10"] - ch_wo["S68", "S10"]
+      ch_s210s10_d <- ch_w["S210", "S10"] - ch_wo["S210", "S10"]
+      ch_s210s68_d <- ch_w["S210", "S68"] - ch_wo["S210", "S68"]
+      ch_t108t10_d <- ch_w["T108", "T10"] - ch_wo["T108", "T10"]
+      ch_t189t10_d <- ch_w["T189", "T10"] - ch_wo["T189", "T10"]
+      ch_t189t108_d <- ch_w["T189", "T108"] - ch_wo["T189", "T108"]
+      ch_s10p10_d <- ch_w["S10", "P10"] - ch_wo["S10", "P10"]
+      ch_t10p10_d <- ch_w["T10", "P10"] - ch_wo["T10", "P10"]
+      ch_t10s10_d <- ch_w["T10", "S10"] - ch_wo["T10", "S10"]
+      ch_t108s68_d <- ch_w["T108", "S68"] - ch_wo["T108", "S68"]
+      ch_t189s210_d <- ch_w["T189", "S210"] - ch_wo["T189", "S210"]
+      ch_t189p10_d <- ch_w["T189", "P10"] - ch_wo["T189", "P10"]
+    }
+
+    # estimate the div/ovlp for the reduced TCR set from the median
+    # Simpson
+    measures$si_p10_d <- c(measures$si_p10_d, median(si_p10_d))
+    measures$si_s10_d <- c(measures$si_s10_d, median(si_s10_d))
+    measures$si_s68_d <- c(measures$si_s68_d, median(si_s68_d))
+    measures$si_s210_d <- c(measures$si_s210_d, median(si_s210_d))
+    measures$si_t10_d <- c(measures$si_t10_d, median(si_t10_d))
+    measures$si_t108_d <- c(measures$si_t108_d, median(si_t108_d))
+    measures$si_t189_d <- c(measures$si_t189_d, median(si_t189_d))
+
+
+    # Morisita-Horn
+    measures$mh_s68s10_d <- c(measures$mh_s68s10_d, median(mh_s68s10_d))
+    measures$mh_s210s10_d <- c(measures$mh_s210s10_d, median(mh_s210s10_d))
+    measures$mh_s210s68_d <- c(measures$mh_s210s68_d, median(mh_s210s68_d))
+    measures$mh_t108t10_d <- c(measures$mh_t108t10_d, median(mh_t108t10_d))
+    measures$mh_t189t10_d <- c(measures$mh_t189t10_d, median(mh_t189t10_d))
+    measures$mh_t189t108_d <- c(measures$mh_t189t108_d, median(mh_t189t108_d))
+    measures$mh_s10p10_d <- c(measures$mh_s10p10_d, median(mh_s10p10_d))
+    measures$mh_t10p10_d <- c(measures$mh_t10p10_d, median(mh_t10p10_d))
+    measures$mh_t10s10_d <- c(measures$mh_t10s10_d, median(mh_t10s10_d))
+    measures$mh_t108s68_d <- c(measures$mh_t108s68_d, median(mh_t108s68_d))
+    measures$mh_t189s210_d <- c(measures$mh_t189s210_d, median(mh_t189s210_d))
+    measures$mh_t189p10_d <- c(measures$mh_t189p10_d, median(mh_t189p10_d))
+
+    # Chao-Jaccard
+    measures$ch_s68s10_d <- c(measures$ch_s68s10_d, median(ch_s68s10_d))
+    measures$ch_s210s10_d <- c(measures$ch_s210s10_d, median(ch_s210s10_d))
+    measures$ch_s210s68_d <- c(measures$ch_s210s68_d, median(ch_s210s68_d))
+    measures$ch_t108t10_d <- c(measures$ch_t108t10_d, median(ch_t108t10_d))
+    measures$ch_t189t10_d <- c(measures$ch_t189t10_d, median(ch_t189t10_d))
+    measures$ch_t189t108_d <- c(measures$ch_t189t108_d, median(ch_t189t108_d))
+    measures$ch_s10p10_d <- c(measures$ch_s10p10_d, median(ch_s10p10_d))
+    measures$ch_t10p10_d <- c(measures$ch_t10p10_d, median(ch_t10p10_d))
+    measures$ch_t10s10_d <- c(measures$ch_t10s10_d, median(ch_t10s10_d))
+    measures$ch_t108s68_d <- c(measures$ch_t108s68_d, median(ch_t108s68_d))
+    measures$ch_t189s210_d <- c(measures$ch_t189s210_d, median(ch_t189s210_d))
+    measures$ch_t189p10_d <- c(measures$ch_t189p10_d, median(ch_t189p10_d))
+
+    if (progress) {
+      # update progress bar
+      utils::setTxtProgressBar(pb, i)
+    }
+  }
+
+  # Convert measures list to a matrix for calculations
+  measure_matrix <- do.call(cbind, measures)
+  # add clone ids
+  rownames(measure_matrix) <- colnames(smpl_table)
+  # add clone labels
+  label_vec <- sapply(colnames(smpl_table), function(id) {
+    id <- as.numeric(id)
+    return(as.numeric(tcr$clonotypes[[id]]$label))
+  })
+
+  measure_obj <- list(label_vec = label_vec,
+                     measure_matrix = measure_matrix)
+
+  if (progress) {
+    # close progress bar
+    close(pb)
+  }
+
+  # return measures
+  return(measure_obj)
+}

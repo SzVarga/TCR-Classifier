@@ -20,7 +20,7 @@ SMPL_SIZE <- ifelse(
   as.numeric(args[2]))                    # sample size
 N_SMPL_LOOP <- 30                         # number of replicates
 DATA_OUT <- "data"                        # output directory
-DETECT_LIM <- 3                           # clone detection limit
+DETECT_LIM <- 10                          # clone detection limit
 DRAWS <- 10000                            # resampling draws
 PROGRESS <- FALSE                         # show progress bar
 
@@ -38,15 +38,19 @@ tryCatch({
 for (i in seq(1, N_SMPL_LOOP, 1)) {
 
   # reference data
-  smpl <- list(P1 = sample_at(tcr, SMPL_SIZE, "P1", detect_lim = DETECT_LIM),
-               S1 = sample_at(tcr, SMPL_SIZE, "S1", detect_lim = DETECT_LIM),
-               S2 = sample_at(tcr, SMPL_SIZE, "S2", detect_lim = DETECT_LIM))
+  smpl <- list(P10 = sample_at(tcr, SMPL_SIZE, "P10", detect_lim = DETECT_LIM),
+               S10 = sample_at(tcr, SMPL_SIZE, "S10", detect_lim = DETECT_LIM),
+               S68 = sample_at(tcr, SMPL_SIZE, "S68", detect_lim = DETECT_LIM),
+               S210 = sample_at(tcr, SMPL_SIZE, "S210", detect_lim = DETECT_LIM),
+               T10 = sample_at(tcr, SMPL_SIZE, "T10", detect_lim = DETECT_LIM),
+               T108 = sample_at(tcr, SMPL_SIZE, "T108", detect_lim = DETECT_LIM),
+               T189 = sample_at(tcr, SMPL_SIZE, "T189", detect_lim = DETECT_LIM))
 
   # combine ref data
   smpl <- do.call(sample_bind, smpl)
 
   # calculate measures
-  measures <- get_measures(tcr, smpl, draws = DRAWS, progress = PROGRESS)
+  measures <- get_measures_prime_boost(tcr, smpl, draws = DRAWS, progress = PROGRESS)
 
   # create subdata by transposing the sample matrix
   subdata <- t(smpl)

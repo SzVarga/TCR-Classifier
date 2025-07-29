@@ -68,33 +68,40 @@ get_label <- function(x) {
 
 #' Map simulation event name to event time.
 #'
-#' This function maps a simulation event name to its corresponding event time.
+#' This function maps a simulation event name to its corresponding event time
+#' by dynamically calculating the cumulative time from the repertoire's sim_times.
 #' This function allows for the use of event names in sampling functions.
 #'
+#' @param repertoire The TCR repertoire object containing sim_times.
 #' @param simt_name The name of the simulation event.
 #' @return The event time corresponding to the event name.
 #'
 #' @examples
 #' # Map an event name to its time
-#' sim_name2time("P1")
+#' sim_name2time(repertoire, "P10")
 #'
 #' @export
-sim_name2time <- function(simt_name) {
-  # map evnt name to evnt time
+sim_name2time <- function(repertoire, simt_name) {
+  # Handle special case for "begin"
   if (simt_name == "begin") {
-    time_point <- 0
-  } else if (simt_name == "P1") {
-    time_point <- 10
-  } else if (simt_name == "S1") {
-    time_point <- 20
-  } else if (simt_name == "S2") {
-    time_point <- 30
-  } else {
-    # unknown event name
-    time_point <- simt_name
+    return(0)
   }
 
-  return(time_point)
+  # Get the sim_times from repertoire
+  sim_times <- repertoire$sim_times
+
+  # Check if the time name exists in sim_times
+  if (!simt_name %in% names(sim_times)) {
+    stop("Time point '", simt_name, "' not found in repertoire sim_times")
+  }
+
+  # Find the index of the requested time point
+  time_index <- which(names(sim_times) == simt_name)
+
+  # Calculate cumulative time by summing all intervals up to (and including) the target
+  cumulative_time <- sum(sim_times[1:time_index])
+
+  return(cumulative_time)
 }
 
 #' Create a new TCR (T-cell receptor) object.
@@ -374,7 +381,7 @@ data_at <- function(repertoire, time_point, ...) {
   args <- list(...)
 
   # convert event name to timePoint
-  time_point <- sim_name2time(time_point)
+  time_point <- sim_name2time(repertoire, time_point)
 
   # return clonotype-data at given time_point
   filter <- repertoire$data[, "time"] == time_point
@@ -412,28 +419,52 @@ sample_at <- function(repertoire, size = 15, time_point, detect_lim = 3) {
   # fetch tcr data at time_point
   data <- data_at(repertoire = repertoire, time_point = time_point)
 
-  # apply detection limit
-  filter <- data[2:(length(data) - 1)] >= detect_lim
-  filter <- c(TRUE, filter, TRUE)
+  # identify clone columns by checking for numeric column names
+  col_names <- names(data)
+  clone_indices <- which(suppressWarnings(!is.na(as.numeric(col_names))))
+
+  if (length(clone_indices) == 0) {
+    stop("No clone columns found (columns with numeric names)")
+  }
+
+  # apply detection limit to clone columns only
+  filter <- rep(FALSE, length(data))
+  filter[clone_indices] <- data[clone_indices] >= detect_lim
+  # always keep non-clone columns (time, total, virus, etc.)
+  filter[!seq_along(data) %in% clone_indices] <- TRUE
   data <- data[filter]
 
+  # update clone indices after filtering
+  col_names_filtered <- names(data)
+  clone_indices_filtered <- which(suppressWarnings(!is.na(as.numeric(col_names_filtered))))
+
   # check if pool size > size
-  pool_size <- Reduce(sum, data[2:(length(data) - 1)])
+  pool_size <- Reduce(sum, data[clone_indices_filtered])
   if (size == "all") {
     size <- pool_size
   }
   if (pool_size <= size) {
-    return(data[2:(length(data) - 1)])
+    return(data[clone_indices_filtered])
   }
   # create pool to sample from
-  ids <- names(data)[2:(length(data) - 1)]
+  ids <- names(data)[clone_indices_filtered]
+
+  # find total column - look for columns containing "total"
+  total_col_indices <- grep("total", col_names_filtered, ignore.case = TRUE)
+  if (length(total_col_indices) == 1) {
+    # use the single total column found
+    total_count <- data[total_col_indices]
+  } else {
+    # fallback to sum of clone columns if no single total column or multiple matches
+    total_count <- sum(data[clone_indices_filtered])
+  }
 
   # sampled tcr
   smpld <- numeric(size)
   # sampling sequentially
   for (i in 1:size){
     # calculate weights
-    weights <- data[2:(length(data) - 1)] / data[length(data)]
+    weights <- data[clone_indices_filtered] / total_count
     # sample clone id
     smpl <- sample(ids, size = 1, replace = FALSE, prob = weights)
     # append sampled clone to sampled vector
