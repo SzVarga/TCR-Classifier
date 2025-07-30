@@ -52,6 +52,9 @@ rsconnect/
 data/
 plots/
 
+# archived files
+archive/
+
 # experimental scripts written in python
 py/
 
