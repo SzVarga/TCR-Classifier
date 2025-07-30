@@ -1,7 +1,20 @@
 #!/bin/bash
 
-# main loop
-for ((i = 1; i < 100; i += 1)); do
+# main submit loop
+for ((i = 20; i <= 500; i += 20)); do
   # submit script with CLI argument
-  sbatch cluster/submit.sh "$i"
+  #sbatch cluster/submit.sh "$i"
+  bash cluster/submit_gen_smpl_table.sh data/tcr_data/tcrColl_100clo_a100_x100.rds "$i"
+done
+
+for ((i = 600; i <= 3000; i += 200)); do
+  # submit script with CLI argument
+  #sbatch cluster/submit.sh "$i"
+  bash cluster/submit_gen_smpl_table.sh data/tcr_data/tcrColl_100clo_a100_x100.rds "$i"
+done
+
+for ((i = 3500; i <= 8000; i += 500)); do
+  # submit script with CLI argument
+  #sbatch cluster/submit.sh "$i"
+  bash cluster/submit_gen_smpl_table.sh data/tcr_data/tcrColl_100clo_a100_x100.rds "$i"
 done

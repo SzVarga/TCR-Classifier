@@ -12,6 +12,6 @@
 # Rscript script/ref_measure_calc.R $1 $2
 # Rscript script/classify_naive.R $1
 # Rscript script/classify_pca_knn.R $1
-# Rscript script/classify_pca_mlr.R $1
-# Rscript script/classify_mlr.R $1 
+ Rscript script/classify_pca_mlr.R $1
+# Rscript script/classify_mlr.R $1
 # Rscript script/classify_knn.R $1 
