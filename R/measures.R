@@ -129,9 +129,9 @@ get_measures <- function(tcr, smpl_table, draws = 10000, progress = FALSE) {
       # Morisita-Horn
       mh_w <- mh(draw_w)
       mh_wo <- mh(draw_wo)
-      mh_s1p1[draw] <- mh_wo["S1", "P1"]
-      mh_s2s1[draw] <- mh_wo["S2", "S1"]
-      mh_s2p1[draw] <- mh_wo["S2", "P1"]
+      mh_s1p1[draw] <- mh_w["S1", "P1"]
+      mh_s2s1[draw] <- mh_w["S2", "S1"]
+      mh_s2p1[draw] <- mh_w["S2", "P1"]
       mh_s1p1_d[draw] <- mh_w["S1", "P1"] - mh_wo["S1", "P1"]
       mh_s2s1_d[draw] <- mh_w["S2", "S1"] - mh_wo["S2", "S1"]
       mh_s2p1_d[draw] <- mh_w["S2", "P1"] - mh_wo["S2", "P1"]
@@ -139,9 +139,9 @@ get_measures <- function(tcr, smpl_table, draws = 10000, progress = FALSE) {
       # Chao-Jaccard
       ch_w <- ch(draw_w)
       ch_wo <- ch(draw_wo)
-      ch_s1p1[draw] <- ch_wo["S1", "P1"]
-      ch_s2s1[draw] <- ch_wo["S2", "S1"]
-      ch_s2p1[draw] <- ch_wo["S2", "P1"]
+      ch_s1p1[draw] <- ch_w["S1", "P1"]
+      ch_s2s1[draw] <- ch_w["S2", "S1"]
+      ch_s2p1[draw] <- ch_w["S2", "P1"]
       ch_s1p1_d[draw] <- ch_w["S1", "P1"] - ch_wo["S1", "P1"]
       ch_s2s1_d[draw] <- ch_w["S2", "S1"] - ch_wo["S2", "S1"]
       ch_s2p1_d[draw] <- ch_w["S2", "P1"] - ch_wo["S2", "P1"]
@@ -317,6 +317,13 @@ get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = 
     clo_id <- as.numeric(colnames(smpl_table)[i])
 
     # Simpson
+    si_p10 <- numeric(draws)
+    si_s10 <- numeric(draws)
+    si_s68 <- numeric(draws)
+    si_s210 <- numeric(draws)
+    si_t10 <- numeric(draws)
+    si_t108 <- numeric(draws)
+    si_t189 <- numeric(draws)
     si_p10_d <- numeric(draws)
     si_s10_d <- numeric(draws)
     si_s68_d <- numeric(draws)
@@ -326,39 +333,63 @@ get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = 
     si_t189_d <- numeric(draws)
 
     # Morisita-Horn
+    mh_s68s10 <- numeric(draws)
+    mh_s210s10 <- numeric(draws)
+    mh_s210s68 <- numeric(draws)
     mh_s68s10_d <- numeric(draws)
     mh_s210s10_d <- numeric(draws)
     mh_s210s68_d <- numeric(draws)
 
+    mh_t108t10 <- numeric(draws)
+    mh_t189t10 <- numeric(draws)
+    mh_t189t108 <- numeric(draws)
     mh_t108t10_d <- numeric(draws)
     mh_t189t10_d <- numeric(draws)
     mh_t189t108_d <- numeric(draws)
 
+    mh_s10p10 <- numeric(draws)
+    mh_t10p10 <- numeric(draws)
+    mh_t10s10 <- numeric(draws)
     mh_s10p10_d <- numeric(draws)
     mh_t10p10_d <- numeric(draws)
     mh_t10s10_d <- numeric(draws)
 
+    mh_t108s68 <- numeric(draws)
+    mh_t189s210 <- numeric(draws)
     mh_t108s68_d <- numeric(draws)
     mh_t189s210_d <- numeric(draws)
 
+    mh_t189p10 <- numeric(draws)
     mh_t189p10_d <- numeric(draws)
 
     # Chao-Jaccard
+    ch_s68s10 <- numeric(draws)
+    ch_s210s10 <- numeric(draws)
+    ch_s210s68 <- numeric(draws)
     ch_s68s10_d <- numeric(draws)
     ch_s210s10_d <- numeric(draws)
     ch_s210s68_d <- numeric(draws)
 
+    ch_t108t10 <- numeric(draws)
+    ch_t189t10 <- numeric(draws)
+    ch_t189t108 <- numeric(draws)
     ch_t108t10_d <- numeric(draws)
     ch_t189t10_d <- numeric(draws)
     ch_t189t108_d <- numeric(draws)
 
+    ch_s10p10 <- numeric(draws)
+    ch_t10p10 <- numeric(draws)
+    ch_t10s10 <- numeric(draws)
     ch_s10p10_d <- numeric(draws)
     ch_t10p10_d <- numeric(draws)
     ch_t10s10_d <- numeric(draws)
 
+    ch_t108s68 <- numeric(draws)
+    ch_t189s210 <- numeric(draws)
     ch_t108s68_d <- numeric(draws)
     ch_t189s210_d <- numeric(draws)
 
+    ch_t189p10 <- numeric(draws)
     ch_t189p10_d <- numeric(draws)
 
     for (draw in seq(1, draws)) {
@@ -368,6 +399,14 @@ get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = 
 
       # calculate the div/ovlp measures for the reduced set
       # Simpson
+      si_p10[draw] <- si(draw_w["P10", ])
+      si_s10[draw] <- si(draw_w["S10", ])
+      si_s68[draw] <- si(draw_w["S68", ])
+      si_s210[draw] <- si(draw_w["S210", ])
+      si_t10[draw] <- si(draw_w["T10", ])
+      si_t108[draw] <- si(draw_w["T108", ])
+      si_t189[draw] <- si(draw_w["T189", ])
+
       si_p10_d[draw] <- si(draw_w["P10", ]) - si(draw_wo["P10", ])
       si_s10_d[draw] <- si(draw_w["S10", ]) - si(draw_wo["S10", ])
       si_s68_d[draw] <- si(draw_w["S68", ]) - si(draw_wo["S68", ])
@@ -379,6 +418,20 @@ get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = 
       # Morisita-Horn
       mh_w <- mh(draw_w)
       mh_wo <- mh(draw_wo)
+
+      mh_s68s10 <- mh_w["S68", "S10"]
+      mh_s210s10 <- mh_w["S210", "S10"]
+      mh_s210s68 <- mh_w["S210", "S68"]
+      mh_t108t10 <- mh_w["T108", "T10"]
+      mh_t189t10 <- mh_w["T189", "T10"]
+      mh_t189t108 <- mh_w["T189", "T108"]
+      mh_s10p10 <- mh_w["S10", "P10"]
+      mh_t10p10 <- mh_w["T10", "P10"]
+      mh_t10s10 <- mh_w["T10", "S10"]
+      mh_t108s68 <- mh_w["T108", "S68"]
+      mh_t189s210 <- mh_w["T189", "S210"]
+      mh_t189p10 <- mh_w["T189", "P10"]
+
       mh_s68s10_d <- mh_w["S68", "S10"] - mh_wo["S68", "S10"]
       mh_s210s10_d <- mh_w["S210", "S10"] - mh_wo["S210", "S10"]
       mh_s210s68_d <- mh_w["S210", "S68"] - mh_wo["S210", "S68"]
@@ -395,6 +448,20 @@ get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = 
       # Chao-Jaccard
       ch_w <- ch(draw_w)
       ch_wo <- ch(draw_wo)
+
+      ch_s68s10 <- ch_w["S68", "S10"]
+      ch_s210s10 <- ch_w["S210", "S10"]
+      ch_s210s68 <- ch_w["S210", "S68"]
+      ch_t108t10 <- ch_w["T108", "T10"]
+      ch_t189t10 <- ch_w["T189", "T10"]
+      ch_t189t108 <- ch_w["T189", "T108"]
+      ch_s10p10 <- ch_w["S10", "P10"]
+      ch_t10p10 <- ch_w["T10", "P10"]
+      ch_t10s10 <- ch_w["T10", "S10"]
+      ch_t108s68 <- ch_w["T108", "S68"]
+      ch_t189s210 <- ch_w["T189", "S210"]
+      ch_t189p10 <- ch_w["T189", "P10"]
+
       ch_s68s10_d <- ch_w["S68", "S10"] - ch_wo["S68", "S10"]
       ch_s210s10_d <- ch_w["S210", "S10"] - ch_wo["S210", "S10"]
       ch_s210s68_d <- ch_w["S210", "S68"] - ch_wo["S210", "S68"]
@@ -411,6 +478,14 @@ get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = 
 
     # estimate the div/ovlp for the reduced TCR set from the median
     # Simpson
+    measures$si_p10 <- c(measures$si_p10, median(si_p10))
+    measures$si_s10 <- c(measures$si_s10, median(si_s10))
+    measures$si_s68 <- c(measures$si_s68, median(si_s68))
+    measures$si_s210 <- c(measures$si_s210, median(si_s210))
+    measures$si_t10 <- c(measures$si_t10, median(si_t10))
+    measures$si_t108 <- c(measures$si_t108, median(si_t108))
+    measures$si_t189 <- c(measures$si_t189, median(si_t189))
+
     measures$si_p10_d <- c(measures$si_p10_d, median(si_p10_d))
     measures$si_s10_d <- c(measures$si_s10_d, median(si_s10_d))
     measures$si_s68_d <- c(measures$si_s68_d, median(si_s68_d))
@@ -421,6 +496,19 @@ get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = 
 
 
     # Morisita-Horn
+    measures$mh_s68s10 <- c(measures$mh_s68s10, median(mh_s68s10))
+    measures$mh_s210s10 <- c(measures$mh_s210s10, median(mh_s210s10))
+    measures$mh_s210s68 <- c(measures$mh_s210s68, median(mh_s210s68))
+    measures$mh_t108t10 <- c(measures$mh_t108t10, median(mh_t108t10))
+    measures$mh_t189t10 <- c(measures$mh_t189t10, median(mh_t189t10))
+    measures$mh_t189t108 <- c(measures$mh_t189t108, median(mh_t189t108))
+    measures$mh_s10p10 <- c(measures$mh_s10p10, median(mh_s10p10))
+    measures$mh_t10p10 <- c(measures$mh_t10p10, median(mh_t10p10))
+    measures$mh_t10s10 <- c(measures$mh_t10s10, median(mh_t10s10))
+    measures$mh_t108s68 <- c(measures$mh_t108s68, median(mh_t108s68))
+    measures$mh_t189s210 <- c(measures$mh_t189s210, median(mh_t189s210))
+    measures$mh_t189p10 <- c(measures$mh_t189p10, median(mh_t189p10))
+    
     measures$mh_s68s10_d <- c(measures$mh_s68s10_d, median(mh_s68s10_d))
     measures$mh_s210s10_d <- c(measures$mh_s210s10_d, median(mh_s210s10_d))
     measures$mh_s210s68_d <- c(measures$mh_s210s68_d, median(mh_s210s68_d))
@@ -435,6 +523,19 @@ get_measures_prime_boost <- function(tcr, smpl_table, draws = 10000, progress = 
     measures$mh_t189p10_d <- c(measures$mh_t189p10_d, median(mh_t189p10_d))
 
     # Chao-Jaccard
+    measures$ch_s68s10 <- c(measures$ch_s68s10, median(ch_s68s10_d))
+    measures$ch_s210s10 <- c(measures$ch_s210s10, median(ch_s210s10))
+    measures$ch_s210s68 <- c(measures$ch_s210s68, median(ch_s210s68))
+    measures$ch_t108t10 <- c(measures$ch_t108t10, median(ch_t108t10))
+    measures$ch_t189t10 <- c(measures$ch_t189t10, median(ch_t189t10))
+    measures$ch_t189t108 <- c(measures$ch_t189t108, median(ch_t189t108))
+    measures$ch_s10p10 <- c(measures$ch_s10p10, median(ch_s10p10))
+    measures$ch_t10p10 <- c(measures$ch_t10p10, median(ch_t10p10))
+    measures$ch_t10s10 <- c(measures$ch_t10s10, median(ch_t10s10))
+    measures$ch_t108s68 <- c(measures$ch_t108s68, median(ch_t108s68))
+    measures$ch_t189s210 <- c(measures$ch_t189s210, median(ch_t189s210))
+    measures$ch_t189p10 <- c(measures$ch_t189p10, median(ch_t189p10))
+
     measures$ch_s68s10_d <- c(measures$ch_s68s10_d, median(ch_s68s10_d))
     measures$ch_s210s10_d <- c(measures$ch_s210s10_d, median(ch_s210s10_d))
     measures$ch_s210s68_d <- c(measures$ch_s210s68_d, median(ch_s210s68_d))

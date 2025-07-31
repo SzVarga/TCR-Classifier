@@ -18,11 +18,11 @@ SMPL_SIZE <- ifelse(
   args[2] == "all",
   args[2],
   as.numeric(args[2]))                    # sample size
-N_SMPL_LOOP <- 30                         # number of replicates
+N_SMPL_LOOP <- 10                         # number of replicates
 DATA_OUT <- "data"                        # output directory
 DETECT_LIM <- 10                          # clone detection limit
-DRAWS <- 10000                            # resampling draws
-PROGRESS <- FALSE                         # show progress bar
+DRAWS <- 1000                             # resampling draws
+PROGRESS <- TRUE                          # show progress bar
 
 tryCatch({
   # load tcr_collection object
