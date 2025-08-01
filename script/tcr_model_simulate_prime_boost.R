@@ -52,7 +52,7 @@ viral_params_prime_boost <- list(
     c(20, 27) + bip,                    # Boost V2: days 20-27
     c(260, 267) + bip                   # Boost V3: days 260-267
   ),
-  viral_burden_sensitivity = 0.002  # Enable cumulative viral burden effect
+  viral_burden_sensitivity = 0.00002  # Enable cumulative viral burden effect
 )
 
 tcr_collection <- list()
@@ -66,7 +66,7 @@ for (generation in 1:num_generations) {
     death_persistent <- get_logistic_death(birth_persistent)
     birth_contracting <- sample_skewed_normal(param_scale * 0.003, param_scale * 0.0003, 0)
     death_contracting <- get_logistic_death(birth_contracting) * sample_skewed_normal(4, 0.5, 0)
-    birth_late_emerging <- sample_skewed_normal(param_scale * 0.004, param_scale * 0.0004 * 1e-2, 0)
+    birth_late_emerging <- sample_skewed_normal(param_scale * 0.01, param_scale * 0.001, 0)
     death_late_emerging <- get_logistic_death(birth_late_emerging)
 
     # Add clones with different avidity levels
@@ -77,7 +77,7 @@ for (generation in 1:num_generations) {
       init_size = clone_size,
       birth = c(birth_persistent, rep(birth_persistent, 9)),
       death = c(get_logistic_death(birth_persistent), rep(death_persistent, 9)),
-      avidity = 1E-1
+      avidity = 1E-3
     )
 
     # Contracting clones: moderate avidity
@@ -87,7 +87,7 @@ for (generation in 1:num_generations) {
       init_size = clone_size,
       birth = c(rep(birth_contracting, 2), rep(birth_contracting, 8)),
       death = c(rep(get_logistic_death(birth_contracting), 2), rep(death_contracting, 8)),
-      avidity = 1E-1
+      avidity = 1E-3
     )
 
     # Late emerging clones: very high avidity (strongest binders)
@@ -97,7 +97,7 @@ for (generation in 1:num_generations) {
       init_size = 3,
       birth = c(rep(0, 7), rep(birth_late_emerging, 3)), # Late emerging pattern
       death = c(rep(0, 7), rep(death_late_emerging, 3)),
-      avidity = 1E-1
+      avidity = 1E-3
     )
   }
 

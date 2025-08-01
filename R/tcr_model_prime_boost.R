@@ -194,13 +194,13 @@ tcr_simulate_tpart_primeBoostModel <- function(repertoire, init_values, param_id
         
         # Modify base birth rate based on cumulative viral burden
         if (params$viral_burden_sensitivity > 0 && cumulative_burden > 0) {
-          viral_burden_effect <- params[[birth_param]] * params$viral_burden_sensitivity * cumulative_burden
+          viral_burden_effect <- params[[birth_param]] * params$viral_burden_sensitivity * cumulative_burden * clone_vars[[i]]
           base_birth_rate <- base_birth_rate + viral_burden_effect
         }
         
         # Apply avidity-based proliferation boost if parameter exists
         if (avidity_param %in% names(params) && viral_load > 0) {
-          avidity_boost <- params[[birth_param]] * params[[avidity_param]] * viral_load
+          avidity_boost <- params[[birth_param]] * params[[avidity_param]] * viral_load * clone_vars[[i]]
           birth_rate <- max(0, base_birth_rate + avidity_boost)
         } else {
           birth_rate <- max(0, base_birth_rate)
